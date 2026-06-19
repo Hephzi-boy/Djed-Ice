@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import { MetricCard, MedosPage, Panel, PlusIcon, PrimaryButton } from "../_components/medos-ui";
+import {
+  CalendarIcon,
+  MetricCard,
+  MedosPage,
+  Panel,
+  PlusIcon,
+  PrimaryButton,
+} from "../_components/medos-ui";
+import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import {
   createAppointment,
@@ -18,11 +26,15 @@ const statuses = ["Pending", "Confirmed", "Completed", "Cancelled"];
 export default function AppointmentsPage() {
   const [workspace, setWorkspace] = useState<AppointmentWorkspaceData | null>(null);
   const { session, role } = useWorkspaceUser();
+  const { theme } = useWorkspaceTheme();
+  const appointmentTimeRef = useRef<HTMLInputElement | null>(null);
+  const intakeSectionRef = useRef<HTMLDivElement | null>(null);
+  const queueSectionRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    patientId: "",
+    patientName: "",
     visitReason: "",
     priority: priorities[2],
     appointmentDate: "",
@@ -68,7 +80,11 @@ export default function AppointmentsPage() {
   }
 
   async function handleCreateAppointment() {
-    if (!form.patientId || !form.visitReason || !form.appointmentDate) {
+    const selectedPatient = (workspace?.patients || []).find(
+      (patient) => patient.label.toLowerCase() === form.patientName.trim().toLowerCase()
+    );
+
+    if (!selectedPatient || !form.visitReason || !form.appointmentDate) {
       setError("Patient, visit reason, and appointment time are required.");
       return;
     }
@@ -78,7 +94,7 @@ export default function AppointmentsPage() {
 
     try {
       await createAppointment({
-        patient_id: form.patientId,
+        patient_id: selectedPatient.id,
         doctor_id: role === "doctor" ? session.user.id : null,
         visit_reason: form.visitReason,
         priority: role === "receptionist" ? "Routine" : form.priority,
@@ -87,7 +103,7 @@ export default function AppointmentsPage() {
       });
 
       setForm({
-        patientId: "",
+        patientName: "",
         visitReason: "",
         priority: priorities[2],
         appointmentDate: "",
@@ -132,7 +148,8 @@ export default function AppointmentsPage() {
           ? "Create appointments and track status from the front desk."
           : "Oversee appointments across the workspace.";
   const actionLabel =
-    role === "receptionist" ? "Front desk queue" : role === "nurse" ? "Care queue" : "Doctor queue";
+    role === "receptionist" ? "New booking" : role === "nurse" ? "Open intake" : "Open intake";
+  const actionTargetRef = canCreateAppointments ? intakeSectionRef : queueSectionRef;
 
   return (
     <MedosPage
@@ -141,7 +158,10 @@ export default function AppointmentsPage() {
       title={pageTitle}
       description={description}
       action={
-        <PrimaryButton icon={<PlusIcon className="h-4 w-4" />}>
+        <PrimaryButton
+          icon={<PlusIcon className="h-4 w-4" />}
+          onClick={() => actionTargetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
           {actionLabel}
         </PrimaryButton>
       }
@@ -158,12 +178,12 @@ export default function AppointmentsPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <Panel className="bg-white/95">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-[15px] font-semibold text-slate-950">
+        <Panel>
+          <div ref={intakeSectionRef} className={`px-6 py-5 ${theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"}`}>
+            <h2 className={`text-[15px] font-semibold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
               {role === "receptionist" ? "Create appointment" : "Appointment intake"}
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
               {role === "receptionist"
                 ? "Register a booking request and assign the visit time."
                 : "Assign a patient, set urgency, and choose the appointment time."}
@@ -172,25 +192,30 @@ export default function AppointmentsPage() {
 
           <div className="space-y-4 px-6 py-5">
             <Field label="Patient">
-              <select
-                value={form.patientId}
-                onChange={(event) => setForm((current) => ({ ...current, patientId: event.target.value }))}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none"
-              >
-                <option value="">Select patient</option>
-                {(workspace?.patients || []).map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.label}
-                  </option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <input
+                  list="patient-options"
+                  value={form.patientName}
+                  onChange={(event) => setForm((current) => ({ ...current, patientName: event.target.value }))}
+                  placeholder="Type patient name"
+                  className={inputClassName(theme)}
+                />
+                <datalist id="patient-options">
+                  {(workspace?.patients || []).map((patient) => (
+                    <option key={patient.id} value={patient.label} />
+                  ))}
+                </datalist>
+                <p className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                  Start typing to search registered patients.
+                </p>
+              </div>
             </Field>
 
             <Field label="Visit reason">
               <textarea
                 value={form.visitReason}
                 onChange={(event) => setForm((current) => ({ ...current, visitReason: event.target.value }))}
-                className="min-h-24 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-800 outline-none"
+                className={`${inputClassName(theme)} min-h-24 py-3`}
                 placeholder="Describe the visit reason"
               />
             </Field>
@@ -201,7 +226,7 @@ export default function AppointmentsPage() {
                   value={form.priority}
                   onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}
                   disabled={role === "receptionist"}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none"
+                  className={inputClassName(theme)}
                 >
                   {priorities.map((priority) => (
                     <option key={priority} value={priority}>
@@ -212,12 +237,36 @@ export default function AppointmentsPage() {
               </Field>
 
               <Field label="Appointment time">
-                <input
-                  type="datetime-local"
-                  value={form.appointmentDate}
-                  onChange={(event) => setForm((current) => ({ ...current, appointmentDate: event.target.value }))}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none"
-                />
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      ref={appointmentTimeRef}
+                      type="datetime-local"
+                      value={form.appointmentDate}
+                      min={getMinDateTimeValue()}
+                      step={900}
+                      onChange={(event) =>
+                        setForm((current) => ({ ...current, appointmentDate: event.target.value }))
+                      }
+                      className={`${inputClassName(theme)} pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => openNativeDateTimePicker(appointmentTimeRef.current)}
+                      className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border shadow-none transition ${
+                        theme === "dark"
+                          ? "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600 hover:bg-slate-700"
+                          : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                      aria-label="Open date and time picker"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                    Choose the visit date and time in 15-minute steps.
+                  </p>
+                </div>
               </Field>
             </div>
 
@@ -235,10 +284,10 @@ export default function AppointmentsPage() {
           </div>
         </Panel>
 
-        <Panel className="bg-white/95">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-[15px] font-semibold text-slate-950">Appointment queue</h2>
-            <p className="mt-1 text-sm text-slate-500">
+        <Panel>
+          <div ref={queueSectionRef} className={`px-6 py-5 ${theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"}`}>
+            <h2 className={`text-[15px] font-semibold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>Appointment queue</h2>
+            <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
               {canEditQueue
                 ? "Update status and urgency directly from your queue."
                 : "Track appointment status from the queue."}
@@ -246,28 +295,28 @@ export default function AppointmentsPage() {
           </div>
 
           {loading ? (
-            <p className="px-6 py-8 text-sm text-slate-500">Loading appointments...</p>
+            <p className={`px-6 py-8 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>Loading appointments...</p>
           ) : workspace?.appointments.length ? (
-            <div className="divide-y divide-slate-200">
+            <div className={theme === "dark" ? "divide-y divide-slate-800" : "divide-y divide-slate-200"}>
               {workspace.appointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_140px_140px]"
                 >
                   <div>
-                    <p className="text-[16px] font-medium text-slate-950">
+                    <p className={`text-[16px] font-medium ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
                       {appointment.patientName}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
                       {appointment.visitReason || "No visit reason provided"}
                     </p>
-                    <p className="mt-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-400">
+                    <p className={`mt-2 text-xs font-medium uppercase tracking-[0.24em] ${theme === "dark" ? "text-slate-500" : "text-slate-400"}`}>
                       {appointment.appointmentDate || "No appointment time"}
                     </p>
                   </div>
 
                   <label className="block">
-                    <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                    <span className={`mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
                       Priority
                     </span>
                     {canEditQueue ? (
@@ -276,7 +325,7 @@ export default function AppointmentsPage() {
                         onChange={(event) =>
                           handlePatchAppointment(appointment, { priority: event.target.value })
                         }
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none"
+                        className={inputClassName(theme)}
                       >
                         {priorities.map((priority) => (
                           <option key={priority} value={priority}>
@@ -285,14 +334,14 @@ export default function AppointmentsPage() {
                         ))}
                       </select>
                     ) : (
-                      <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700">
+                      <div className={`${inputClassName(theme)} flex items-center`}>
                         {appointment.priority}
                       </div>
                     )}
                   </label>
 
                   <label className="block">
-                    <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">
+                    <span className={`mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
                       Status
                     </span>
                     {canEditQueue ? (
@@ -301,7 +350,7 @@ export default function AppointmentsPage() {
                         onChange={(event) =>
                           handlePatchAppointment(appointment, { status: event.target.value })
                         }
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 outline-none"
+                        className={inputClassName(theme)}
                       >
                         {statuses.map((status) => (
                           <option key={status} value={status}>
@@ -310,7 +359,7 @@ export default function AppointmentsPage() {
                         ))}
                       </select>
                     ) : (
-                      <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700">
+                      <div className={`${inputClassName(theme)} flex items-center`}>
                         {appointment.status}
                       </div>
                     )}
@@ -319,7 +368,7 @@ export default function AppointmentsPage() {
               ))}
             </div>
           ) : (
-            <p className="px-6 py-8 text-sm text-slate-500">
+            <p className={`px-6 py-8 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
               No appointments are assigned yet.
             </p>
           )}
@@ -336,12 +385,51 @@ function Field({
   label: string;
   children: React.ReactNode;
 }) {
+  const { theme } = useWorkspaceTheme();
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">
+      <span className={`mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
         {label}
       </span>
       {children}
     </label>
   );
+}
+
+function getMinDateTimeValue() {
+  const now = new Date();
+  now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
+
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  const hours = `${now.getHours()}`.padStart(2, "0");
+  const minutes = `${now.getMinutes()}`.padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function openNativeDateTimePicker(input: HTMLInputElement | null) {
+  if (!input) {
+    return;
+  }
+
+  const pickerInput = input as HTMLInputElement & {
+    showPicker?: () => void;
+  };
+
+  if (typeof pickerInput.showPicker === "function") {
+    pickerInput.showPicker();
+    return;
+  }
+
+  pickerInput.focus();
+}
+
+function inputClassName(theme: "light" | "dark") {
+  return `h-11 w-full rounded-xl px-3 text-sm outline-none transition ${
+    theme === "dark"
+      ? "border border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-sky-700 focus:bg-slate-900"
+      : "border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white"
+  }`;
 }

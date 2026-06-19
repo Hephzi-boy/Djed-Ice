@@ -1,23 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import {
+  ButtonFx,
   DataPill,
   MedosPage,
   MetricCard,
+  Modal,
   Panel,
   PanelHeader,
+  PrimaryButton,
   ReportIcon,
+  buttonClassName,
 } from "../_components/medos-ui";
+import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import { fetchDashboardData, type DashboardData } from "@/lib/workspace-data";
 import type { UserRole } from "@/lib/roles";
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [selectedAction, setSelectedAction] = useState<RoleAction | null>(null);
   const { role, displayName } = useWorkspaceUser();
+  const { theme } = useWorkspaceTheme();
+  const router = useRouter();
 
   useEffect(() => {
     let active = true;
@@ -36,6 +45,7 @@ export default function DashboardPage() {
   const view = getDashboardView(role, displayName, data?.workspaceName);
   const metrics = data?.metrics.filter((metric) => view.metricLabels.includes(metric.label)) || [];
   const canOpenReports = role === "admin" || role === "doctor";
+  const actions = useMemo(() => getRoleActions(role), [role]);
 
   return (
     <MedosPage
@@ -56,8 +66,41 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {actions.length ? (
+        <Panel>
+          <PanelHeader
+            title="Action center"
+            subtitle="Use role-specific actions to move directly into the work assigned to this account."
+          />
+          <div className="grid gap-4 px-6 py-5 md:grid-cols-2 xl:grid-cols-4">
+            {actions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => setSelectedAction(action)}
+                className={`${buttonClassName({ subtle: true, fullWidth: true })} h-auto min-h-28 items-start justify-start px-4 py-4 text-left shadow-none ${
+                  theme === "dark"
+                    ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                    : "border-slate-200 bg-slate-50 text-slate-900 hover:border-sky-100 hover:bg-sky-50"
+                }`}
+              >
+                <ButtonFx />
+                <span className="relative z-10 space-y-2">
+                  <span className={`block text-sm font-semibold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
+                    {action.title}
+                  </span>
+                  <span className={`block text-sm leading-6 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+                    {action.detail}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </Panel>
+      ) : null}
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <Panel className="bg-white/95">
+        <Panel>
           <PanelHeader
             title={view.primaryTitle}
             subtitle={view.primarySubtitle}
@@ -74,24 +117,31 @@ export default function DashboardPage() {
               data.reviews.map((item) => (
                 <div
                   key={`${item.id}-${item.title}`}
-                  className="flex flex-col gap-4 border-t border-slate-200 px-6 py-5 first:border-t-0 md:flex-row md:items-center md:justify-between"
+                  className={`flex flex-col gap-4 px-6 py-5 first:border-t-0 md:flex-row md:items-center md:justify-between ${
+                    theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"
+                  }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-sky-700 ${theme === "dark" ? "bg-sky-950" : "bg-sky-50"}`}>
                       <ReportIcon className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-[17px] font-medium text-slate-950">{item.title}</p>
-                      <p className="text-sm text-slate-500">{item.id || "No identifier"}</p>
+                      <p className={`text-[17px] font-medium ${theme === "dark" ? "text-white" : "text-slate-950"}`}>{item.title}</p>
+                      <p className={`text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>{item.id || "No identifier"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {item.confidence ? <DataPill tone="blue">{item.confidence}</DataPill> : null}
                     <Link
                       href="/reports"
-                      className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-50"
+                      className={`${buttonClassName({ subtle: true })} h-10 px-4 shadow-none ${
+                        theme === "dark"
+                          ? "border-slate-800 bg-slate-900 text-slate-100 hover:border-slate-700 hover:bg-slate-800"
+                          : ""
+                      }`}
                     >
-                      Review
+                      <ButtonFx />
+                      <span className="relative z-10">Review</span>
                     </Link>
                   </div>
                 </div>
@@ -102,19 +152,21 @@ export default function DashboardPage() {
           </div>
         </Panel>
 
-        <Panel className="bg-white/95">
+        <Panel>
           <PanelHeader title={view.secondaryTitle} subtitle={view.secondarySubtitle} />
           <div>
             {data?.activity.length ? (
               data.activity.map((entry) => (
                 <div
                   key={`${entry.time}-${entry.title}`}
-                  className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 border-t border-slate-200 px-6 py-5 first:border-t-0"
+                  className={`grid grid-cols-[64px_minmax(0,1fr)] gap-3 px-6 py-5 first:border-t-0 ${
+                    theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"
+                  }`}
                 >
-                  <p className="pt-0.5 text-xs font-medium text-slate-500">{entry.time}</p>
+                  <p className={`pt-0.5 text-xs font-medium ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>{entry.time}</p>
                   <div>
-                    <p className="text-[15px] font-medium text-slate-900">{entry.title}</p>
-                    {entry.meta ? <p className="mt-1 text-sm text-slate-500">{entry.meta}</p> : null}
+                    <p className={`text-[15px] font-medium ${theme === "dark" ? "text-white" : "text-slate-900"}`}>{entry.title}</p>
+                    {entry.meta ? <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>{entry.meta}</p> : null}
                   </div>
                 </div>
               ))
@@ -124,15 +176,56 @@ export default function DashboardPage() {
           </div>
         </Panel>
       </div>
+
+      <Modal
+        open={Boolean(selectedAction)}
+        onClose={() => setSelectedAction(null)}
+        title={selectedAction?.title || "Role action"}
+        description={selectedAction?.detail}
+        footer={
+          selectedAction ? (
+            <>
+              <PrimaryButton subtle onClick={() => setSelectedAction(null)}>
+                Cancel
+              </PrimaryButton>
+              <PrimaryButton
+                onClick={() => {
+                  router.push(selectedAction.href);
+                  setSelectedAction(null);
+                }}
+              >
+                {selectedAction.cta}
+              </PrimaryButton>
+            </>
+          ) : undefined
+        }
+      >
+        <div className="space-y-3">
+          {selectedAction?.points.map((point) => (
+            <div
+              key={point}
+              className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
+                theme === "dark"
+                  ? "border border-slate-800 bg-slate-900 text-slate-300"
+                  : "border border-slate-200 bg-slate-50 text-slate-600"
+              }`}
+            >
+              {point}
+            </div>
+          ))}
+        </div>
+      </Modal>
     </MedosPage>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
-  return <p className="px-6 py-6 text-sm text-slate-500">{message}</p>;
+  const { theme } = useWorkspaceTheme();
+  return <p className={`px-6 py-6 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>{message}</p>;
 }
 
 function RoleTasks({ role }: { role: UserRole | null }) {
+  const { theme } = useWorkspaceTheme();
   const tasks = {
     admin: [
       "Oversee hospital activity and subscription usage.",
@@ -163,13 +256,176 @@ function RoleTasks({ role }: { role: UserRole | null }) {
       {items.map((item) => (
         <div
           key={item}
-          className="border-t border-slate-200 px-6 py-5 first:border-t-0"
+          className={`px-6 py-5 first:border-t-0 ${
+            theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"
+          }`}
         >
-          <p className="text-sm text-slate-600">{item}</p>
+          <p className={`text-sm ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}>{item}</p>
         </div>
       ))}
     </div>
   );
+}
+
+type RoleAction = {
+  id: string;
+  title: string;
+  detail: string;
+  href: string;
+  cta: string;
+  points: string[];
+};
+
+function getRoleActions(role: UserRole | null): RoleAction[] {
+  switch (role) {
+    case "admin":
+      return [
+        {
+          id: "hospital",
+          title: "Manage hospital settings",
+          detail: "Review profile, AI behavior, subscription state, and session controls.",
+          href: "/settings",
+          cta: "Open settings",
+          points: [
+            "Update hospital-wide settings and review account scope.",
+            "Monitor subscription usage and current plan state.",
+            "Keep workspace controls aligned with operations.",
+          ],
+        },
+        {
+          id: "records",
+          title: "Review patient operations",
+          detail: "Check patient records and current registration activity.",
+          href: "/patients",
+          cta: "Open patients",
+          points: [
+            "Inspect current patient records and intake flow.",
+            "Review the operational side of registration and follow-up.",
+          ],
+        },
+        {
+          id: "analytics",
+          title: "Inspect operational flow",
+          detail: "Look through activity, triage volume, and document load.",
+          href: "/appointments",
+          cta: "Open appointments",
+          points: [
+            "Review the appointment queue and current flow pressure.",
+            "Use dashboard metrics to spot operational bottlenecks.",
+          ],
+        },
+      ];
+    case "doctor":
+      return [
+        {
+          id: "appointments",
+          title: "Manage appointments",
+          detail: "Open the clinical queue and update patient visit status.",
+          href: "/appointments",
+          cta: "Open appointments",
+          points: [
+            "Adjust visit priority and status as the queue changes.",
+            "Keep assigned consultations moving with current clinical context.",
+          ],
+        },
+        {
+          id: "reports",
+          title: "Create reports",
+          detail: "Generate clinical drafts and review AI summaries.",
+          href: "/reports",
+          cta: "Open reports",
+          points: [
+            "Draft discharge, referral, or summary reports.",
+            "Use AI output as a draft, then review before final use.",
+          ],
+        },
+        {
+          id: "patients",
+          title: "View patients",
+          detail: "Review patient records before and during consultation.",
+          href: "/patients",
+          cta: "Open patients",
+          points: [
+            "Search records quickly by name, ID, or phone.",
+            "Inspect current status and last visit details.",
+          ],
+        },
+      ];
+    case "nurse":
+      return [
+        {
+          id: "register",
+          title: "Register patient",
+          detail: "Open patient intake and add a new record.",
+          href: "/patients",
+          cta: "Open patients",
+          points: [
+            "Capture core patient details needed for the clinical workflow.",
+            "Keep records current for downstream doctor and reception use.",
+          ],
+        },
+        {
+          id: "queue",
+          title: "Manage appointments",
+          detail: "Support scheduling flow and update queue status.",
+          href: "/appointments",
+          cta: "Open appointments",
+          points: [
+            "Adjust queue state as patient flow changes.",
+            "Coordinate follow-through between intake and consultation.",
+          ],
+        },
+        {
+          id: "records",
+          title: "Review patient records",
+          detail: "Check patient records during care coordination.",
+          href: "/patients",
+          cta: "Open records",
+          points: [
+            "Search and inspect patient history visible to nursing staff.",
+            "Track status changes during coordination and follow-up.",
+          ],
+        },
+      ];
+    case "receptionist":
+      return [
+        {
+          id: "new-patient",
+          title: "Register new patient",
+          detail: "Start intake and create a patient record.",
+          href: "/patients",
+          cta: "Open patients",
+          points: [
+            "Capture the essential registration details at the front desk.",
+            "Prepare the patient record before appointment booking.",
+          ],
+        },
+        {
+          id: "new-appointment",
+          title: "Create appointment",
+          detail: "Book a visit and assign the appointment time.",
+          href: "/appointments",
+          cta: "Open appointments",
+          points: [
+            "Create the booking request with the visit reason.",
+            "Track status from intake through confirmation.",
+          ],
+        },
+        {
+          id: "status",
+          title: "Check appointment status",
+          detail: "Inspect the queue without touching clinical-only controls.",
+          href: "/appointments",
+          cta: "Review queue",
+          points: [
+            "Track pending, confirmed, and completed appointments.",
+            "Stay aligned with the current front desk workload.",
+          ],
+        },
+      ];
+    default:
+      return [];
+  }
 }
 
 function getDashboardView(

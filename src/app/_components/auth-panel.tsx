@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { ButtonFx, buttonClassName } from "@/app/_components/medos-ui";
 import { supabase } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
@@ -267,15 +268,18 @@ export function AuthPanel({ mode }: { mode: AuthMode }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-sky-700 text-sm font-medium text-white shadow-sm transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:bg-sky-400"
+                  className={buttonClassName({ fullWidth: true })}
                 >
-                  {loading
-                    ? isSignup
-                      ? "Creating account..."
-                      : "Signing in..."
-                    : isSignup
-                      ? "Create account"
-                      : "Sign in"}
+                  <ButtonFx />
+                  <span className="relative z-10 inline-flex items-center justify-center gap-2">
+                    {loading
+                      ? isSignup
+                        ? "Creating account..."
+                        : "Signing in..."
+                      : isSignup
+                        ? "Create account"
+                        : "Sign in"}
+                  </span>
                 </button>
               </form>
 
@@ -285,9 +289,12 @@ export function AuthPanel({ mode }: { mode: AuthMode }) {
                 </span>
                 <Link
                   href={isSignup ? "/login" : "/signup"}
-                  className="font-medium text-sky-700 hover:text-sky-800"
+                  className={buttonClassName({ subtle: true })}
                 >
-                  {isSignup ? "Go to login" : "Create one"}
+                  <ButtonFx />
+                  <span className="relative z-10 inline-flex items-center gap-2">
+                    {isSignup ? "Go to login" : "Create one"}
+                  </span>
                 </Link>
               </div>
 

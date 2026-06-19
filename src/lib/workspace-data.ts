@@ -531,6 +531,20 @@ export async function updateAppointment(
   }
 }
 
+export async function createPatient(input: {
+  full_name: string;
+  gender?: string | null;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  address?: string | null;
+}) {
+  const { error } = await supabase.from("patients").insert(input);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function fetchPatientsData(): Promise<PatientRecord[]> {
   const rows = await readRows(patientTables, 100);
 
