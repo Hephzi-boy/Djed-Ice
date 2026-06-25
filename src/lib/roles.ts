@@ -24,7 +24,7 @@ export const routeRoleMap: Record<RouteKey, UserRole[]> = {
   appointments: ["admin", "doctor", "nurse", "receptionist"],
   patients: ["admin", "doctor", "nurse", "receptionist"],
   reports: ["admin", "doctor"],
-  prescriptions: ["admin", "doctor"],
+  prescriptions: ["admin", "doctor", "nurse", "receptionist"],
   settings: ["admin", "doctor", "nurse", "receptionist"],
 };
 

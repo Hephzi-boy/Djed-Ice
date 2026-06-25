@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode, SVGProps } from "react";
+import { useState, useEffect } from "react";
 import { useWorkspaceTheme } from "./workspace-theme-context";
 
 type IconProps = SVGProps<SVGSVGElement>;
@@ -17,7 +18,7 @@ export function buttonClassName({
     fullWidth ? "w-full" : "",
     subtle
       ? "ice-button--subtle border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-      : "border border-sky-700 bg-sky-700 text-white hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-sky-400 disabled:bg-sky-400",
+      : "border border-sky-700 bg-sky-700 text-slate-900 hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-sky-400 disabled:bg-sky-400",
   ]
     .filter(Boolean)
     .join(" ");
@@ -107,6 +108,15 @@ export function SearchIcon(props: IconProps) {
   );
 }
 
+export function BellIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+      <path d="M6.5 9.5a5.5 5.5 0 1 1 11 0c0 5.5 2 6.5 2 6.5h-15s2-1 2-6.5Z" />
+      <path d="M10 19a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
 export function PlusIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
@@ -171,16 +181,12 @@ export function MedosPage(props: {
           <div className="space-y-3">
             <div className="space-y-2">
               <h1
-                className={`text-3xl font-semibold tracking-tight sm:text-4xl ${
-                  theme === "dark" ? "text-white" : "text-slate-950"
-                }`}
+                className="text-3xl font-semibold tracking-tight sm:text-4xl text-slate-950"
               >
                 {title}
               </h1>
               <p
-                className={`max-w-2xl text-[15px] leading-7 ${
-                  theme === "dark" ? "text-slate-400" : "text-slate-500"
-                }`}
+                className="max-w-2xl text-[15px] leading-7 text-slate-600"
               >
                 {description}
               </p>
@@ -201,6 +207,7 @@ export function PrimaryButton({
   onClick,
   disabled = false,
   type = "button",
+  className = "",
 }: {
   children: ReactNode;
   subtle?: boolean;
@@ -208,13 +215,14 @@ export function PrimaryButton({
   onClick?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
+  className?: string;
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={buttonClassName({ subtle })}
+      className={`${buttonClassName({ subtle })} ${className}`.trim()}
     >
       <ButtonFx />
       <span className="relative z-10 inline-flex items-center gap-2">
@@ -265,11 +273,11 @@ export function PanelHeader({
       }`}
     >
       <div>
-        <h2 className={`text-[15px] font-semibold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
+        <h2 className="text-[15px] font-semibold text-slate-950">
           {title}
         </h2>
         {subtitle ? (
-          <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+          <p className="mt-1 text-sm text-slate-600">
             {subtitle}
           </p>
         ) : null}
@@ -290,11 +298,11 @@ export function DataPill({
   const tones =
     theme === "dark"
       ? {
-          neutral: "bg-slate-800 text-slate-300",
-          blue: "bg-sky-950 text-sky-200",
-          green: "bg-emerald-950 text-emerald-200",
-          red: "bg-rose-950 text-rose-200",
-          amber: "bg-amber-950 text-amber-200",
+          neutral: "bg-slate-800 text-slate-900",
+          blue: "bg-sky-950 text-sky-900",
+          green: "bg-emerald-950 text-emerald-900",
+          red: "bg-rose-950 text-rose-900",
+          amber: "bg-amber-950 text-amber-900",
         }
       : {
           neutral: "bg-slate-100 text-slate-600",
@@ -332,32 +340,63 @@ export function Modal({
 }) {
   const { theme } = useWorkspaceTheme();
 
-  if (!open) {
-    return null;
-  }
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [open, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      inert={!open ? true : undefined}
+      className={`fixed inset-0 z-50 overflow-y-auto p-4 transition-opacity duration-200 sm:p-6 ${
+        open ? "opacity-100" : "pointer-events-none opacity-0"
+      }`}
+      aria-hidden={!open}
+    >
       <button
         type="button"
         aria-label="Close modal"
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+        className={`absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0"
+        }`}
       />
       <div
-        className={`relative z-10 w-full max-w-2xl overflow-hidden rounded-[28px] shadow-[0_30px_80px_rgba(15,23,42,0.35)] ${
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className={`relative z-10 mx-auto my-4 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] shadow-[0_30px_80px_rgba(15,23,42,0.35)] transition-all duration-200 sm:my-8 sm:max-h-[calc(100vh-4rem)] ${
+          open ? "translate-y-0 scale-100 opacity-100" : "translate-y-6 scale-[0.985] opacity-0"
+        } ${
           theme === "dark"
             ? "border border-slate-800 bg-slate-950"
             : "border border-slate-200 bg-white"
         }`}
       >
-        <div className={`flex items-start justify-between gap-4 px-6 py-5 ${theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"}`}>
+        <div className={`shrink-0 flex items-start justify-between gap-4 px-6 py-5 ${theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"}`}>
           <div>
-            <h2 className={`text-xl font-semibold ${theme === "dark" ? "text-white" : "text-slate-950"}`}>
+            <h2 className="text-xl font-semibold text-slate-950">
               {title}
             </h2>
             {description ? (
-              <p className={`mt-1 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+              <p className="mt-1 text-sm text-slate-600">
                 {description}
               </p>
             ) : null}
@@ -367,7 +406,7 @@ export function Modal({
             onClick={onClose}
             className={`${buttonClassName({ subtle: true })} h-10 px-3 shadow-none ${
               theme === "dark"
-                ? "border-slate-800 bg-slate-900 text-slate-200 hover:border-slate-700 hover:bg-slate-800"
+                ? "border-slate-800 bg-slate-900 text-slate-900 hover:border-slate-700 hover:bg-slate-800"
                 : ""
             }`}
           >
@@ -375,9 +414,9 @@ export function Modal({
             <span className="relative z-10">Close</span>
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div className="min-h-0 overflow-y-auto px-6 py-5">{children}</div>
         {footer ? (
-          <div className={`flex flex-wrap items-center justify-end gap-3 px-6 py-5 ${theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"}`}>
+          <div className={`shrink-0 flex flex-wrap items-center justify-end gap-3 px-6 py-5 ${theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"}`}>
             {footer}
           </div>
         ) : null}
@@ -397,7 +436,6 @@ export function MetricCard({
   subtext: string;
   tone?: "slate" | "red" | "green";
 }) {
-  const { theme } = useWorkspaceTheme();
   const accentTone =
     tone === "red"
       ? "bg-rose-500"
@@ -409,20 +447,54 @@ export function MetricCard({
       ? "text-rose-600"
       : tone === "green"
         ? "text-emerald-600"
-        : theme === "dark"
-          ? "text-white"
-          : "text-slate-950";
+        : "text-slate-950";
 
   return (
     <Panel>
       <div className={`h-1 w-full ${accentTone}`} />
       <div className="space-y-3 px-6 py-5">
-        <p className={`text-[10px] font-medium uppercase tracking-[0.28em] ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+        <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
           {label}
         </p>
         <p className={`text-4xl font-semibold tracking-tight ${valueTone}`}>{value}</p>
-        <p className={`text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>{subtext}</p>
+        <p className="text-sm text-slate-600">{subtext}</p>
       </div>
     </Panel>
+  );
+}
+
+export function Toast({
+  message,
+  duration = 3000,
+  onClose,
+}: {
+  message: string;
+  duration?: number;
+  onClose?: () => void;
+}) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setVisible(false);
+      onClose?.();
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [duration, onClose]);
+
+  if (!visible) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-slide-in">
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
+          <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-emerald-900">{message}</p>
+      </div>
+    </div>
   );
 }

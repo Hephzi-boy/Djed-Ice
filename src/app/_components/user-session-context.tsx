@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { Session } from "@supabase/supabase-js";
 
 import type { UserRole } from "@/lib/roles";
+import type { WorkspaceSession } from "@/lib/workspace-data";
 
 export type WorkspaceUser = {
-  session: Session;
+  session: WorkspaceSession;
   role: UserRole | null;
   displayName: string;
   roleLabel: string;

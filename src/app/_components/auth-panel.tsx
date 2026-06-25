@@ -6,7 +6,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { ButtonFx, buttonClassName } from "@/app/_components/medos-ui";
-import { supabase } from "@/lib/supabase";
+import {
+  getWorkspaceSession,
+  signInWorkspaceUser,
+  signUpWorkspaceUser,
+} from "@/lib/workspace-data";
 
 type AuthMode = "login" | "signup";
 const roleOptions = ["Admin", "Doctor", "Nurse", "Receptionist"];
@@ -28,8 +32,8 @@ export function AuthPanel({ mode }: { mode: AuthMode }) {
   useEffect(() => {
     let active = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) {
+    getWorkspaceSession().then((session) => {
+      if (active && session) {
         router.replace("/dashboard");
       }
     });
@@ -64,47 +68,29 @@ export function AuthPanel({ mode }: { mode: AuthMode }) {
 
     setLoading(true);
 
-    if (isSignup) {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role,
-          },
-        },
-      });
-
-      setLoading(false);
-
-      if (signUpError) {
-        setError(signUpError.message);
-        return;
-      }
-
-      if (data.session) {
+    try {
+      if (isSignup) {
+        await signUpWorkspaceUser({
+          email,
+          password,
+          fullName,
+          role,
+        });
         router.replace("/dashboard");
         return;
       }
 
-      setMessage("Account created. Check your email to confirm the signup.");
-      return;
+      await signInWorkspaceUser({
+        email,
+        password,
+      });
+
+      router.replace("/dashboard");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Authentication failed.");
+    } finally {
+      setLoading(false);
     }
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    setLoading(false);
-
-    if (signInError) {
-      setError(signInError.message);
-      return;
-    }
-
-    router.replace("/dashboard");
   }
 
   return (
