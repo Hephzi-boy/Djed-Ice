@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 
 import {
   CalendarIcon,
+  MedosPage,
+  MetricCard,
   Modal,
   Panel,
+  PanelHeader,
   PlusIcon,
   PrimaryButton,
 } from "../_components/medos-ui";
 import { createPatient } from "@/lib/workspace-data";
-import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import {
   createAppointment,
@@ -28,7 +30,6 @@ export default function AppointmentsPage() {
   const router = useRouter();
   const [workspace, setWorkspace] = useState<AppointmentWorkspaceData | null>(null);
   const { session, role } = useWorkspaceUser();
-  const { theme } = useWorkspaceTheme();
   const appointmentTimeRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -169,7 +170,9 @@ export default function AppointmentsPage() {
     if (role === "doctor") {
       const patient = workspace?.patients.find((p) => p.id === appointment.patientId);
       if (patient) {
-        router.push(`/prescriptions?patientId=${patient.id}&patientName=${encodeURIComponent(patient.label)}&visitReason=${encodeURIComponent(appointment.visitReason || "")}&appointmentId=${appointment.id}`);
+        router.push(
+          `/prescriptions?patientId=${patient.id}&patientName=${encodeURIComponent(patient.label)}&visitReason=${encodeURIComponent(appointment.visitReason || "")}&appointmentId=${appointment.id}`
+        );
       }
     }
   }
@@ -237,132 +240,111 @@ export default function AppointmentsPage() {
     role === "receptionist" ? "New booking" : role === "nurse" ? "Open intake" : "Open intake";
 
   return (
-    <div className="mx-auto max-w-[1220px] space-y-5">
-      <section className="rounded-[24px] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:px-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-[30px] font-semibold tracking-tight text-slate-950">{pageTitle}</h1>
-            <p className="mt-2 text-[15px] leading-7 text-slate-600">{description}</p>
-          </div>
-          <PrimaryButton
-            icon={<PlusIcon className="h-4 w-4" />}
-            onClick={() => setIsIntakeModalOpen(true)}
-            className="h-10 self-start px-5 text-sm"
-          >
-            {actionLabel}
-          </PrimaryButton>
-        </div>
-      </section>
-
+    <MedosPage
+      sectionNumber="02"
+      sectionTitle="Queue Management"
+      title={pageTitle}
+      description={description}
+      action={
+        <PrimaryButton icon={<PlusIcon className="h-4 w-4" />} onClick={() => setIsIntakeModalOpen(true)} className="h-11 px-5">
+          {actionLabel}
+        </PrimaryButton>
+      }
+    >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <AppointmentMetricTile
-          label="Total appointments"
-          value={String(counts.total)}
-          subtext={role === "doctor" ? "Assigned to you" : "Visible in your workspace"}
-        />
-        <AppointmentMetricTile label="Pending" value={String(counts.pending)} subtext="Awaiting confirmation" tone="red" />
-        <AppointmentMetricTile label="Confirmed" value={String(counts.confirmed)} subtext="Ready for visit" tone="green" />
-        <AppointmentMetricTile label="Completed" value={String(counts.completed)} subtext="Closed visits" tone="green" />
+        <MetricCard label="Total appointments" value={String(counts.total)} subtext={role === "doctor" ? "Assigned to you" : "Visible in workspace"} />
+        <MetricCard label="Pending" value={String(counts.pending)} subtext="Awaiting confirmation" tone="red" />
+        <MetricCard label="Confirmed" value={String(counts.confirmed)} subtext="Ready for visit" tone="green" />
+        <MetricCard label="Completed" value={String(counts.completed)} subtext="Closed visits" tone="green" />
       </div>
 
-      <Panel className="border-slate-200/80 bg-white">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="text-[22px] font-semibold tracking-tight text-slate-950">Appointment queue</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            {canEditQueue
+      <Panel>
+        <PanelHeader
+          title="Appointment queue"
+          subtitle={
+            canEditQueue
               ? "Update status and urgency directly from your queue."
-              : "Track appointment status from the queue."}
-          </p>
-        </div>
+              : "Track appointment status from the queue."
+          }
+          right={<span className="med-label hidden sm:inline">{visibleAppointments.length} active visits</span>}
+        />
 
         {loading ? (
-          <p className="px-6 py-8 text-sm text-slate-600">Loading appointments...</p>
+          <p className="px-6 py-8 text-sm text-[color:var(--muted)]">Loading appointments...</p>
         ) : visibleAppointments.length ? (
-          <div className="divide-y divide-slate-200">
+          <div className="grid gap-4 px-5 py-5 lg:grid-cols-2">
             {visibleAppointments.map((appointment) => (
-              <div key={appointment.id} className="px-6 py-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-[28px] font-semibold tracking-tight text-slate-950">
-                      {appointment.patientName}
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      {appointment.visitReason || "No visit reason provided"}
-                    </p>
-                    <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-                      {appointment.appointmentDate || "No appointment time"}
-                    </p>
+              <div key={appointment.id} className="med-surface-strong rounded-[26px] p-5">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-[1.45rem] font-bold tracking-[-0.04em] text-[color:var(--foreground-soft)]">
+                        {appointment.patientName}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">
+                        {appointment.visitReason || "No visit reason provided"}
+                      </p>
+                    </div>
+                    <span className="med-chip med-chip--accent whitespace-nowrap">
+                      {appointment.appointmentDate || "No time set"}
+                    </span>
                   </div>
 
                   {role === "doctor" ? (
-                    <PrimaryButton
-                      subtle
-                      onClick={() => handleSelectPatient(appointment)}
-                      className="h-10 self-start border-sky-700 bg-white px-5 text-sky-700 hover:bg-sky-50"
-                    >
-                      Select Patient
+                    <PrimaryButton subtle onClick={() => handleSelectPatient(appointment)} className="h-10 self-start px-5">
+                      Select patient
                     </PrimaryButton>
                   ) : null}
-                </div>
 
-                <div className="mt-5 grid gap-4 md:max-w-[520px] md:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-slate-600">
-                      Priority
-                    </span>
-                    {canEditQueue ? (
-                      <select
-                        value={appointment.priority}
-                        onChange={(event) =>
-                          handlePatchAppointment(appointment, { priority: event.target.value })
-                        }
-                        className={queueInputClassName(theme)}
-                      >
-                        {priorities.map((priority) => (
-                          <option key={priority} value={priority}>
-                            {priority}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className={`${queueInputClassName(theme)} flex items-center`}>
-                        {appointment.priority}
-                      </div>
-                    )}
-                  </label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="med-label mb-2 block">Priority</span>
+                      {canEditQueue ? (
+                        <select
+                          value={appointment.priority}
+                          onChange={(event) =>
+                            handlePatchAppointment(appointment, { priority: event.target.value })
+                          }
+                          className="med-select"
+                        >
+                          {priorities.map((priority) => (
+                            <option key={priority} value={priority}>
+                              {priority}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="med-input flex items-center">{appointment.priority}</div>
+                      )}
+                    </label>
 
-                  <label className="block">
-                    <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-slate-600">
-                      Status
-                    </span>
-                    {canEditQueue ? (
-                      <select
-                        value={appointment.status}
-                        onChange={(event) =>
-                          handlePatchAppointment(appointment, { status: event.target.value })
-                        }
-                        className={queueInputClassName(theme)}
-                      >
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className={`${queueInputClassName(theme)} flex items-center`}>
-                        {appointment.status}
-                      </div>
-                    )}
-                  </label>
+                    <label className="block">
+                      <span className="med-label mb-2 block">Status</span>
+                      {canEditQueue ? (
+                        <select
+                          value={appointment.status}
+                          onChange={(event) =>
+                            handlePatchAppointment(appointment, { status: event.target.value })
+                          }
+                          className="med-select"
+                        >
+                          {statuses.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="med-input flex items-center">{appointment.status}</div>
+                      )}
+                    </label>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className={`px-6 py-8 text-sm ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
-            No appointments are assigned yet.
-          </p>
+          <p className="px-6 py-8 text-sm text-[color:var(--muted)]">No appointments are assigned yet.</p>
         )}
       </Panel>
 
@@ -370,9 +352,11 @@ export default function AppointmentsPage() {
         open={isIntakeModalOpen}
         onClose={() => setIsIntakeModalOpen(false)}
         title={role === "receptionist" ? "Create appointment" : "Appointment intake"}
-        description={role === "receptionist"
-          ? "Register a booking request and assign the visit time."
-          : "Assign a patient, set urgency, and choose the appointment time."}
+        description={
+          role === "receptionist"
+            ? "Register a booking request and assign the visit time."
+            : "Assign a patient, set urgency, and choose the appointment time."
+        }
         footer={
           <>
             <PrimaryButton subtle onClick={() => setIsIntakeModalOpen(false)}>
@@ -392,24 +376,22 @@ export default function AppointmentsPage() {
                 value={form.patientName}
                 onChange={(event) => setForm((current) => ({ ...current, patientName: event.target.value }))}
                 placeholder="Type patient name"
-                className={inputClassName(theme)}
+                className="med-input"
               />
               <datalist id="patient-options">
                 {(workspace?.patients || []).map((patient) => (
                   <option key={patient.id} value={patient.label} />
                 ))}
               </datalist>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-600">
-                  Start typing to search registered patients.
-                </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs text-[color:var(--muted)]">Start typing to search registered patients.</p>
                 {canCreatePatients ? (
                   <button
                     type="button"
                     onClick={() => setIsPatientModalOpen(true)}
-                    className="text-xs font-medium text-sky-700 hover:text-sky-800"
+                    className="text-xs font-semibold text-[color:var(--accent-strong)]"
                   >
-                    + Create new patient
+                    Create new patient
                   </button>
                 ) : null}
               </div>
@@ -420,7 +402,7 @@ export default function AppointmentsPage() {
             <textarea
               value={form.visitReason}
               onChange={(event) => setForm((current) => ({ ...current, visitReason: event.target.value }))}
-              className={`${inputClassName(theme)} min-h-24 py-3`}
+              className="med-textarea"
               placeholder="Describe the visit reason"
             />
           </Field>
@@ -431,7 +413,7 @@ export default function AppointmentsPage() {
                 value={form.priority}
                 onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value }))}
                 disabled={role === "receptionist"}
-                className={inputClassName(theme)}
+                className="med-select"
               >
                 {priorities.map((priority) => (
                   <option key={priority} value={priority}>
@@ -453,30 +435,24 @@ export default function AppointmentsPage() {
                     onChange={(event) =>
                       setForm((current) => ({ ...current, appointmentDate: event.target.value }))
                     }
-                    className={`${inputClassName(theme)} pr-12`}
+                    className="med-input pr-12"
                   />
                   <button
                     type="button"
                     onClick={() => openNativeDateTimePicker(appointmentTimeRef.current)}
-                    className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border shadow-none transition ${
-                      theme === "dark"
-                        ? "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600 hover:bg-slate-700"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                    }`}
+                    className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-strong)] text-[color:var(--foreground)] transition hover:border-[color:var(--border-strong)]"
                     aria-label="Open date and time picker"
                   >
                     <CalendarIcon className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="text-xs text-slate-600">
-                  Choose the visit date and time in 15-minute steps.
-                </p>
+                <p className="text-xs text-[color:var(--muted)]">Choose the visit date and time in 15-minute steps.</p>
               </div>
             </Field>
           </div>
 
           {error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="rounded-2xl border border-rose-200 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           ) : null}
@@ -507,14 +483,14 @@ export default function AppointmentsPage() {
             <input
               value={patientForm.fullName}
               onChange={(event) => setPatientForm((current) => ({ ...current, fullName: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-input"
             />
           </Field>
           <Field label="Gender">
             <select
               value={patientForm.gender}
               onChange={(event) => setPatientForm((current) => ({ ...current, gender: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-select"
             >
               <option value="">Select gender</option>
               <option value="Male">Male</option>
@@ -525,7 +501,7 @@ export default function AppointmentsPage() {
             <input
               value={patientForm.phone}
               onChange={(event) => setPatientForm((current) => ({ ...current, phone: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-input"
             />
           </Field>
           <Field label="Date of birth">
@@ -534,7 +510,7 @@ export default function AppointmentsPage() {
                 type="date"
                 value={patientForm.dateOfBirth}
                 onChange={(event) => setPatientForm((current) => ({ ...current, dateOfBirth: event.target.value }))}
-                className={`${inputClassName(theme)} pr-12`}
+                className="med-input pr-12"
               />
               <button
                 type="button"
@@ -542,11 +518,7 @@ export default function AppointmentsPage() {
                   const input = document.querySelector('input[type="date"]') as HTMLInputElement;
                   if (input) input.showPicker();
                 }}
-                className={`absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border shadow-none transition ${
-                  theme === "dark"
-                    ? "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600 hover:bg-slate-700"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                }`}
+                className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-strong)] text-[color:var(--foreground)] transition hover:border-[color:var(--border-strong)]"
                 aria-label="Open date picker"
               >
                 <CalendarIcon className="h-4 w-4" />
@@ -557,51 +529,17 @@ export default function AppointmentsPage() {
             <textarea
               value={patientForm.address}
               onChange={(event) => setPatientForm((current) => ({ ...current, address: event.target.value }))}
-              className={`${inputClassName(theme)} min-h-24 py-3`}
+              className="med-textarea"
             />
           </Field>
         </div>
         {patientError ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">
             {patientError}
           </div>
         ) : null}
       </Modal>
-    </div>
-  );
-}
-
-function AppointmentMetricTile({
-  label,
-  value,
-  subtext,
-  tone = "slate",
-}: {
-  label: string;
-  value: string;
-  subtext: string;
-  tone?: "slate" | "red" | "green";
-}) {
-  const toneClass =
-    tone === "red"
-      ? "bg-rose-500"
-      : tone === "green"
-        ? "bg-emerald-500"
-        : "bg-sky-600";
-  const valueClass =
-    tone === "red" ? "text-rose-600" : tone === "green" ? "text-emerald-600" : "text-slate-950";
-
-  return (
-    <div className="overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-      <div className={`h-1 ${toneClass}`} />
-      <div className="space-y-3 px-5 py-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
-          {label}
-        </p>
-        <p className={`text-4xl font-semibold tracking-tight ${valueClass}`}>{value}</p>
-        <p className="max-w-[14ch] text-sm leading-5 text-slate-600">{subtext}</p>
-      </div>
-    </div>
+    </MedosPage>
   );
 }
 
@@ -616,9 +554,7 @@ function Field({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-        {label}
-      </span>
+      <span className="med-label mb-2 block">{label}</span>
       {children}
     </label>
   );
@@ -652,20 +588,4 @@ function openNativeDateTimePicker(input: HTMLInputElement | null) {
   }
 
   pickerInput.focus();
-}
-
-function inputClassName(theme: "light" | "dark") {
-  return `h-11 w-full rounded-xl px-3 text-sm outline-none transition ${
-    theme === "dark"
-      ? "border border-slate-800 bg-slate-900 text-slate-900 placeholder:text-slate-500 focus:border-sky-700 focus:bg-slate-900"
-      : "border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white"
-  }`;
-}
-
-function queueInputClassName(theme: "light" | "dark") {
-  return `h-11 w-full rounded-lg px-3 text-sm outline-none transition ${
-    theme === "dark"
-      ? "border border-slate-800 bg-slate-900 text-slate-900 placeholder:text-slate-500 focus:border-sky-700 focus:bg-slate-900"
-      : "border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white"
-  }`;
 }

@@ -4,10 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   DataPill,
+  MedosPage,
   Modal,
   Panel,
+  PanelHeader,
   PrimaryButton,
-  ReportIcon,
   SparkIcon,
   Toast,
   buttonClassName,
@@ -147,34 +148,26 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1220px] space-y-5">
-      <section className="rounded-[24px] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:px-7">
-        <h1 className="text-[30px] font-semibold tracking-tight text-slate-950">Medical Report Generator</h1>
-        <p className="mt-2 text-[15px] leading-7 text-slate-600">
-          Select a patient, enter clinical details, and generate a high-fidelity diagnostic draft with Gemini AI.
-        </p>
-      </section>
-
+    <MedosPage
+      sectionNumber="04"
+      sectionTitle="AI Documentation"
+      title="Medical Report Generator"
+      description="Select a patient, enter clinical details, and generate a high-fidelity diagnostic draft with Gemini AI."
+    >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_360px]">
-        <Panel className="border-slate-200/80 bg-white">
-          <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
-                <ReportIcon className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-950">Patient Case Entry</p>
-              </div>
-            </div>
-            <DataPill tone="neutral">Input Mode</DataPill>
-          </div>
+        <Panel>
+          <PanelHeader
+            title="Patient case entry"
+            subtitle="Write the clinical story once, then let the draft preview tighten the structure."
+            right={<DataPill tone="neutral">Input mode</DataPill>}
+          />
 
           <div className="space-y-6 px-6 py-6">
             <Field label="Patient selection">
               <select
                 value={selectedPatient}
                 onChange={(event) => handlePatientChange(event.target.value)}
-                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[15px] text-slate-800 outline-none"
+                className="med-select"
               >
                 <option value="">Select a patient</option>
                 {(workspace?.patients || []).map((patient) => (
@@ -186,16 +179,16 @@ export default function ReportsPage() {
             </Field>
 
             <Field label="Report classification">
-              <div className="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1 sm:grid-cols-3">
+              <div className="grid gap-2 rounded-[22px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-muted)] p-1 sm:grid-cols-3">
                 {reportTypes.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => setReportType(type)}
-                    className={`h-11 rounded-xl text-sm font-medium transition ${
+                    className={`h-11 rounded-2xl text-sm font-semibold transition ${
                       reportType === type
-                        ? "bg-sky-700 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-white"
+                        ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[var(--shadow-soft)]"
+                        : "text-[color:var(--muted)] hover:bg-[color:var(--surface-strong)]"
                     }`}
                   >
                     {type}
@@ -209,7 +202,7 @@ export default function ReportsPage() {
                 value={symptoms}
                 onChange={(event) => setSymptoms(event.target.value)}
                 placeholder="Describe patient symptoms, severity, and timeline."
-                className="min-h-32 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+                className="med-textarea min-h-32"
               />
             </Field>
 
@@ -218,11 +211,11 @@ export default function ReportsPage() {
                 value={treatment}
                 onChange={(event) => setTreatment(event.target.value)}
                 placeholder="Document the current treatment protocol, monitoring plan, and follow-up."
-                className="min-h-32 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-[15px] leading-7 text-slate-800 outline-none placeholder:text-slate-400"
+                className="med-textarea min-h-32"
               />
             </Field>
 
-            <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-[color:var(--border-subtle)] pt-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <input
                   ref={attachmentInputRef}
@@ -236,51 +229,41 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={() => attachmentInputRef.current?.click()}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-sky-700"
+                  className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] px-4 py-2 text-sm font-semibold text-[color:var(--foreground)]"
                 >
-                  <span className="text-base">+</span>
                   Attach labs
                 </button>
                 {attachmentName ? (
-                  <span className="truncate text-sm text-slate-500">{attachmentName}</span>
+                  <span className="truncate text-sm text-[color:var(--muted)]">{attachmentName}</span>
                 ) : null}
               </div>
 
               <PrimaryButton icon={<SparkIcon className="h-4 w-4" />} onClick={handleGenerateDraft} disabled={loading}>
-                {loading ? "Generating..." : "Generate AI Report"}
+                {loading ? "Generating..." : "Generate AI report"}
               </PrimaryButton>
             </div>
           </div>
         </Panel>
 
         <div className="space-y-4">
-          <Panel className="border-slate-200/80 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-50 text-sky-700">
-                  <SparkIcon className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-950">Live Draft Preview</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Auto-saving</span>
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              </div>
-            </div>
+          <Panel>
+            <PanelHeader
+              title="Live draft preview"
+              subtitle={`${draftSourceLabel} | ${draftUpdatedLabel}`}
+              right={<DataPill tone="green">Auto-saving</DataPill>}
+            />
 
             <div className="space-y-5 px-5 py-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[28px] font-semibold leading-8 tracking-tight text-slate-950">{activeDraftTitle}</p>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {activeIdentifier} • {draftUpdatedLabel}
+                  <p className="text-[1.7rem] font-bold leading-8 tracking-[-0.04em] text-[color:var(--foreground-soft)]">
+                    {activeDraftTitle}
                   </p>
+                  <p className="mt-2 text-sm text-[color:var(--muted)]">{activeIdentifier}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-semibold tracking-tight text-sky-700">{activeConfidence}</p>
-                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Confidence</p>
+                  <p className="text-3xl font-bold tracking-[-0.04em] text-[color:var(--accent-strong)]">{activeConfidence}</p>
+                  <p className="med-label mt-1">Confidence</p>
                 </div>
               </div>
 
@@ -288,19 +271,19 @@ export default function ReportsPage() {
                 type="button"
                 onClick={() => setIsDraftModalOpen(true)}
                 disabled={!activeDraft}
-                className="block w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left transition hover:border-sky-300 hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="med-surface-muted block w-full rounded-[24px] p-4 text-left transition hover:border-[color:var(--border-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Review AI report</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                    <p className="text-sm font-semibold text-[color:var(--foreground-soft)]">Review AI report</p>
+                    <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
                       The draft has been enhanced with clinical codification and structured recommendations based on recent guidelines.
                     </p>
                   </div>
-                  <span className="text-lg text-slate-400">→</span>
+                  <span className="text-lg text-[color:var(--muted)]">&gt;</span>
                 </div>
-                <div className="mt-4 h-1.5 rounded-full bg-slate-200">
-                  <div className="h-1.5 rounded-full bg-sky-700" style={{ width: `${parseConfidence(activeConfidence)}%` }} />
+                <div className="mt-4 h-1.5 rounded-full bg-[color:var(--surface-strong)]">
+                  <div className="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--accent),var(--accent-strong))]" style={{ width: `${parseConfidence(activeConfidence)}%` }} />
                 </div>
               </button>
 
@@ -324,7 +307,7 @@ export default function ReportsPage() {
                   disabled={!activeDraft}
                   className={`${buttonClassName({ subtle: true, fullWidth: true })} h-12 text-sm shadow-none disabled:opacity-50`}
                 >
-                  Download PDF
+                  Download draft
                 </button>
                 <PrimaryButton
                   icon={<SparkIcon className="h-4 w-4" />}
@@ -332,7 +315,7 @@ export default function ReportsPage() {
                   disabled={!activeDraft}
                   className="h-12"
                 >
-                  Send to Patient
+                  Send to patient
                 </PrimaryButton>
               </div>
             </div>
@@ -340,17 +323,17 @@ export default function ReportsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <MiniStatCard
-              label="AI Processing"
+              label="AI processing"
               value={loading ? "..." : "1.2s"}
-              detail={loading ? "Running generation" : "↘ -0.3s"}
+              detail={loading ? "Running generation" : "0.3s faster"}
             />
-            <MiniStatCard label="Drafts Today" value="14" detail="↗ +15%" />
+            <MiniStatCard label="Drafts today" value="14" detail="15% higher" />
           </div>
 
-          <Panel className="border-slate-200/80 bg-[#eef4ff]">
-            <div className="px-5 py-4">
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-sky-700">Clinical Insight</p>
-              <p className="mt-3 text-sm leading-6 text-slate-700">{insightText}</p>
+          <Panel className="bg-[linear-gradient(135deg,rgba(14,165,233,0.12),rgba(37,99,235,0.1))]">
+            <div className="px-5 py-5">
+              <p className="med-kicker">Clinical insight</p>
+              <p className="mt-3 text-sm leading-7 text-[color:var(--foreground)]">{insightText}</p>
             </div>
           </Panel>
         </div>
@@ -366,7 +349,7 @@ export default function ReportsPage() {
       </Modal>
 
       {toastMessage ? <Toast message={toastMessage} onClose={() => setToastMessage(null)} /> : null}
-    </div>
+    </MedosPage>
   );
 }
 
@@ -379,9 +362,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.24em] text-slate-500">
-        {label}
-      </span>
+      <span className="med-label mb-2 block">{label}</span>
       {children}
     </label>
   );
@@ -389,7 +370,7 @@ function Field({
 
 function DraftBody({ content }: { content: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[15px] leading-7 text-slate-700 whitespace-pre-wrap">
+    <div className="med-surface-muted rounded-[24px] p-4 whitespace-pre-wrap text-[15px] leading-7 text-[color:var(--foreground)]">
       {content}
     </div>
   );
@@ -405,14 +386,14 @@ function DraftPreviewSnippet({ content }: { content: string }) {
   return (
     <div className="space-y-2">
       {lines.map((line) => (
-        <div key={line} className="h-3 rounded-full bg-slate-100" style={{ width: `${Math.min(100, Math.max(52, line.length * 1.8))}%` }} />
+        <div key={line} className="h-3 rounded-full bg-[color:var(--surface-muted)]" style={{ width: `${Math.min(100, Math.max(52, line.length * 1.8))}%` }} />
       ))}
     </div>
   );
 }
 
 function PreviewSkeleton({ short = false }: { short?: boolean }) {
-  return <div className={`h-3 rounded-full bg-slate-100 ${short ? "w-2/3" : "w-full"}`} />;
+  return <div className={`h-3 rounded-full bg-[color:var(--surface-muted)] ${short ? "w-2/3" : "w-full"}`} />;
 }
 
 function MiniStatCard({
@@ -425,10 +406,10 @@ function MiniStatCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.04)]">
-      <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">{value}</p>
-      <p className="mt-2 text-xs text-slate-500">{detail}</p>
+    <div className="med-surface-strong rounded-[24px] px-4 py-4">
+      <p className="med-label">{label}</p>
+      <p className="mt-3 text-2xl font-bold tracking-[-0.04em] text-[color:var(--foreground-soft)]">{value}</p>
+      <p className="mt-2 text-xs text-[color:var(--muted)]">{detail}</p>
     </div>
   );
 }
@@ -444,7 +425,7 @@ function buildClinicalInsight(symptoms: string, treatment: string) {
   }
 
   if (symptoms) {
-    return `Symptoms indicate the case should be reviewed for supporting labs, recurrence risk, and a structured follow-up plan before patient discharge.`;
+    return "Symptoms indicate the case should be reviewed for supporting labs, recurrence risk, and a structured follow-up plan before patient discharge.";
   }
 
   return "Populate symptoms and treatment details to receive a clearer AI-driven clinical insight panel.";

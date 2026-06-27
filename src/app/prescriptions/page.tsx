@@ -3,7 +3,16 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { Modal, Panel, PillIcon, PrimaryButton, Toast, buttonClassName } from "../_components/medos-ui";
+import {
+  MedosPage,
+  Modal,
+  Panel,
+  PanelHeader,
+  PillIcon,
+  PrimaryButton,
+  Toast,
+  buttonClassName,
+} from "../_components/medos-ui";
 import {
   fetchPrescriptionData,
   updateAppointmentCheckupStatus,
@@ -191,7 +200,7 @@ FOLLOW-UP INSTRUCTIONS
 ${report.followUp}
     `.trim();
 
-    const blob = new Blob([reportContent], { type: "application/pdf" });
+    const blob = createPdfBlob(reportContent);
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -214,26 +223,18 @@ ${report.followUp}
   }
 
   return (
-    <div className="mx-auto max-w-[1180px] space-y-5">
-      <section className="rounded-[24px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-        <h1 className="text-[30px] font-semibold tracking-tight text-slate-950">Prescription Explainer</h1>
-        <p className="mt-2 max-w-3xl text-[15px] leading-7 text-slate-600">
-          Review medication explanations and supporting guidance. Our AI-driven system helps decode complex clinical documentation for better patient understanding.
-        </p>
-      </section>
-
+    <MedosPage
+      sectionNumber="05"
+      sectionTitle="Medication Guidance"
+      title="Prescription Explainer"
+      description="Review medication explanations and supporting guidance with a cleaner handoff between clinician context and patient-friendly language."
+    >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <Panel className="border-slate-200/80 bg-white">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
-                <PillIcon className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-sky-700">Medication Details</p>
-              </div>
-            </div>
-          </div>
+        <Panel>
+          <PanelHeader
+            title="Medication details"
+            subtitle="Enter the current medication details to unlock explanations and interaction guidance."
+          />
 
           <div className="space-y-5 px-6 py-6">
             <Field label="Drug" value={drug} onChange={setDrug} placeholder="E.g. Lisinopril 10mg" />
@@ -252,34 +253,34 @@ ${report.followUp}
                   onClick={() => setIsAiModalOpen(true)}
                   className={`${buttonClassName({ subtle: true, fullWidth: true })} h-12 shadow-none`}
                 >
-                  Open in Prescription
+                  Open treatment plan
                 </button>
               ) : null}
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
-              <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-amber-700">AI Interaction Check</p>
-              <p className="mt-2 text-sm leading-6 text-amber-900">
+            <div className="rounded-[24px] border border-amber-200 bg-amber-500/10 px-4 py-4">
+              <p className="med-label text-amber-700">AI interaction check</p>
+              <p className="mt-2 text-sm leading-7 text-amber-950">
                 {resolvedExplanation.interactionWarning || "No interaction warning is available yet. Please complete the medication details to run the automated safety analysis."}
               </p>
             </div>
 
             {aiReport && (role === "nurse" || role === "admin" || role === "receptionist") ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <div className="med-surface-muted rounded-[24px] px-4 py-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">{aiReport.patientInfo.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">{aiReport.patientInfo.symptoms}</p>
+                    <p className="text-sm font-semibold text-[color:var(--foreground-soft)]">{aiReport.patientInfo.name}</p>
+                    <p className="mt-1 text-xs text-[color:var(--muted)]">{aiReport.patientInfo.symptoms}</p>
                   </div>
-                  <span className="text-xs font-medium text-slate-500">
-                    {isCheckupClosed ? "Checkup Completed" : "In Progress"}
+                  <span className="text-xs font-medium text-[color:var(--muted)]">
+                    {isCheckupClosed ? "Checkup completed" : "In progress"}
                   </span>
                 </div>
                 <div className="mt-4 flex gap-2">
                   <PrimaryButton subtle onClick={() => handleDownloadReport(aiReport)} className="h-10 px-4 shadow-none">
-                    View Report
+                    View report
                   </PrimaryButton>
-                  <PrimaryButton subtle onClick={() => handleDownloadPdfReport(aiReport)} className="h-10 border-emerald-600 bg-emerald-600 px-4 text-white hover:bg-emerald-700">
+                  <PrimaryButton onClick={() => handleDownloadPdfReport(aiReport)} className="h-10 px-4">
                     Download PDF
                   </PrimaryButton>
                 </div>
@@ -289,9 +290,9 @@ ${report.followUp}
         </Panel>
 
         <div className="space-y-4">
-          <Panel className="border-slate-200/80 bg-[#eef5ff]">
+          <Panel className="bg-[linear-gradient(135deg,rgba(14,165,233,0.12),rgba(37,99,235,0.1))]">
             <div className="px-5 py-5">
-              <h2 className="text-[18px] font-semibold tracking-tight text-slate-950">How it works</h2>
+              <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-[color:var(--foreground-soft)]">How it works</h2>
               <div className="mt-4 space-y-4">
                 {[
                   "Enter the drug name, prescribed frequency, and the intended duration.",
@@ -299,34 +300,37 @@ ${report.followUp}
                   "Receive a role-aware explanation and a comprehensive safety interaction check.",
                 ].map((step, index) => (
                   <div key={step} className="flex gap-3">
-                    <span className="text-xs font-semibold text-sky-700">{String(index + 1).padStart(2, "0")}.</span>
-                    <p className="text-sm leading-6 text-slate-600">{step}</p>
+                    <span className="text-xs font-semibold text-[color:var(--accent-strong)]">{String(index + 1).padStart(2, "0")}.</span>
+                    <p className="text-sm leading-7 text-[color:var(--muted)]">{step}</p>
                   </div>
                 ))}
               </div>
             </div>
           </Panel>
 
-          <Panel className="border-slate-200/80 bg-white">
+          <Panel>
             <div className="px-5 py-5">
-              <p className="text-sm font-semibold text-slate-950">Precision Scan v2.4</p>
-              <p className="mt-1 text-xs text-slate-500">Latest update 21 AGO</p>
+              <p className="text-sm font-semibold text-[color:var(--foreground-soft)]">Precision Scan v2.4</p>
+              <p className="mt-1 text-xs text-[color:var(--muted)]">Latest update 21 Aug</p>
               <button
                 type="button"
                 onClick={() => setIsExplanationModalOpen(true)}
-                className="mt-4 text-sm font-medium text-sky-700 transition hover:text-sky-800"
+                className="mt-4 text-sm font-semibold text-[color:var(--accent-strong)]"
               >
                 View release notes
               </button>
             </div>
           </Panel>
 
-          <div className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-slate-950 shadow-[0_12px_34px_rgba(15,23,42,0.14)]">
-            <div className="min-h-[180px] bg-[linear-gradient(180deg,rgba(30,64,175,0.15),rgba(2,6,23,0.65)),url('/ice-background.svg')] bg-cover bg-center px-5 py-5">
+          <div className="overflow-hidden rounded-[28px] border border-[color:var(--border-subtle)] bg-[#07192a] shadow-[var(--shadow-strong)]">
+            <div className="min-h-[180px] bg-[linear-gradient(180deg,rgba(14,165,233,0.2),rgba(7,25,42,0.8)),url('/ice-background.svg')] bg-cover bg-center px-5 py-5">
               <div className="flex h-full flex-col justify-end">
-                <p className="text-sm font-semibold text-white">{patientHeading}</p>
-                <p className="mt-2 max-w-[22ch] text-xs leading-5 text-slate-200">
-                  Patient Safety First. AI-assisted triage and FDA-aware interaction logic remain active during review.
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">
+                  <PillIcon className="h-4 w-4" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-white">{patientHeading}</p>
+                <p className="mt-2 max-w-[24ch] text-xs leading-6 text-slate-200">
+                  Patient safety first. AI-assisted triage and medication logic remain active during review.
                 </p>
                 <div className="mt-4 inline-flex w-fit rounded-full bg-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/80">
                   {safetyReady ? "Ready for analysis" : "Awaiting medication details"}
@@ -340,7 +344,7 @@ ${report.followUp}
       <Modal
         open={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
-        title="AI Treatment Plan Generator"
+        title="AI treatment plan generator"
         description="Generate comprehensive AI-powered treatment plans with prescriptions, reasoning, and follow-up instructions for patient care."
         footer={
           aiReport ? undefined : (
@@ -349,7 +353,7 @@ ${report.followUp}
                 Cancel
               </PrimaryButton>
               <PrimaryButton onClick={handleGenerateAiPrescription} disabled={isGenerating}>
-                {isGenerating ? "Generating..." : "Generate Treatment Plan"}
+                {isGenerating ? "Generating..." : "Generate treatment plan"}
               </PrimaryButton>
             </>
           )
@@ -358,66 +362,35 @@ ${report.followUp}
         <div className="space-y-4">
           {aiReport ? (
             <>
-              <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-                  Patient Information
-                </p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
-                  <p><strong>Name:</strong> {aiReport.patientInfo.name}</p>
-                  <p><strong>Age:</strong> {aiReport.patientInfo.age}</p>
-                  <p><strong>Symptoms:</strong> {aiReport.patientInfo.symptoms}</p>
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-                  AI-Generated Prescription
-                </p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 whitespace-pre-line">
-                  {aiReport.prescription}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-                  AI Reasoning
-                </p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
-                  {aiReport.reasoning}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-                  Treatment Plan
-                </p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800 whitespace-pre-line">
-                  {aiReport.treatmentPlan}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-                  Follow-Up Instructions
-                </p>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-800">
-                  {aiReport.followUp}
-                </div>
-              </div>
+              <InfoCard title="Patient information">
+                <p><strong>Name:</strong> {aiReport.patientInfo.name}</p>
+                <p><strong>Age:</strong> {aiReport.patientInfo.age}</p>
+                <p><strong>Symptoms:</strong> {aiReport.patientInfo.symptoms}</p>
+              </InfoCard>
+              <InfoCard title="AI-generated prescription">
+                <div className="whitespace-pre-line">{aiReport.prescription}</div>
+              </InfoCard>
+              <InfoCard title="AI reasoning">{aiReport.reasoning}</InfoCard>
+              <InfoCard title="Treatment plan">
+                <div className="whitespace-pre-line">{aiReport.treatmentPlan}</div>
+              </InfoCard>
+              <InfoCard title="Follow-up instructions">{aiReport.followUp}</InfoCard>
               <div className="flex flex-wrap gap-3">
                 <PrimaryButton onClick={() => handleDownloadReport(aiReport)}>
-                  Download Report
+                  Download report
                 </PrimaryButton>
-                <PrimaryButton onClick={() => handleDownloadPdfReport(aiReport)} className="bg-emerald-600 hover:bg-emerald-700">
+                <PrimaryButton onClick={() => handleDownloadPdfReport(aiReport)}>
                   Download PDF
                 </PrimaryButton>
               </div>
               {role === "doctor" && !isCheckupClosed ? (
-                <PrimaryButton onClick={handleCloseCheckup} className="bg-emerald-600 hover:bg-emerald-700">
-                  Closed
-                </PrimaryButton>
+                <PrimaryButton onClick={handleCloseCheckup}>Close checkup</PrimaryButton>
               ) : isCheckupClosed ? (
-                <div className="text-sm font-medium text-emerald-600">Checkup Completed</div>
+                <div className="text-sm font-medium text-emerald-600">Checkup completed</div>
               ) : null}
             </>
           ) : (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-[color:var(--muted)]">
               Click &quot;Generate Treatment Plan&quot; to create a comprehensive AI-powered treatment plan with prescriptions, reasoning, and follow-up instructions.
             </p>
           )}
@@ -431,14 +404,14 @@ ${report.followUp}
         description="Review the medication explanation in the view that fits the current conversation."
       >
         <div className="space-y-5">
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <div className="inline-flex rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-muted)] p-1">
             <button
               type="button"
               onClick={() => setExplanationView("doctor")}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                 explanationView === "doctor"
-                  ? "bg-slate-950 text-slate-900"
-                  : "text-slate-500"
+                  ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white"
+                  : "text-[color:var(--muted)]"
               }`}
             >
               Doctor view
@@ -446,17 +419,17 @@ ${report.followUp}
             <button
               type="button"
               onClick={() => setExplanationView("patient")}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                 explanationView === "patient"
-                  ? "bg-slate-950 text-slate-900"
-                  : "text-slate-500"
+                  ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white"
+                  : "text-[color:var(--muted)]"
               }`}
             >
               Patient view
             </button>
           </div>
 
-          <div className="space-y-6 text-[15px] leading-7 text-slate-700">
+          <div className="space-y-6 text-[15px] leading-7 text-[color:var(--foreground)]">
             {resolvedExplanation.details.length ? (
               resolvedExplanation.details.map((detail) => (
                 <ExplanationBlock
@@ -470,7 +443,7 @@ ${report.followUp}
                 />
               ))
             ) : (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-[color:var(--muted)]">
                 No prescription explanation fields are available yet.
               </p>
             )}
@@ -479,7 +452,7 @@ ${report.followUp}
       </Modal>
 
       {toastMessage ? <Toast message={toastMessage} onClose={() => setToastMessage(null)} /> : null}
-    </div>
+    </MedosPage>
   );
 }
 
@@ -496,14 +469,12 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
-        {label}
-      </span>
+      <span className="med-label mb-2 block">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="h-12 w-full rounded-xl border border-slate-200 bg-white px-3 text-[15px] text-slate-800 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+        className="med-input"
       />
     </label>
   );
@@ -512,10 +483,17 @@ function Field({
 function ExplanationBlock({ label, text }: { label: string; text: string }) {
   return (
     <div>
-      <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-slate-500">
-        {label}
-      </p>
-      <p className="mt-2 text-[15px] text-slate-900">{text}</p>
+      <p className="med-label">{label}</p>
+      <p className="mt-2 text-[15px] text-[color:var(--foreground)]">{text}</p>
+    </div>
+  );
+}
+
+function InfoCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="med-label mb-2 block">{title}</p>
+      <div className="med-surface-muted rounded-2xl p-4 text-sm text-[color:var(--foreground)]">{children}</div>
     </div>
   );
 }
@@ -704,4 +682,92 @@ function getAiRecommendationForIllness(illness: string, visitReason?: string | n
     followUp:
       "Schedule follow-up appointment in 5 days if symptoms persist. Seek immediate medical attention if symptoms worsen significantly.",
   };
+}
+
+function createPdfBlob(content: string) {
+  const linesPerPage = 44;
+  const normalizedLines = content.replace(/\r\n/g, "\n").split("\n");
+  const pages = chunkLines(normalizedLines, linesPerPage);
+  const objects: string[] = [];
+
+  objects.push("<< /Type /Catalog /Pages 2 0 R >>");
+
+  const pageObjectNumbers = pages.map((_, index) => 4 + index * 2);
+  objects.push(
+    `<< /Type /Pages /Count ${pages.length} /Kids [${pageObjectNumbers
+      .map((number) => `${number} 0 R`)
+      .join(" ")}] >>`
+  );
+
+  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+
+  pages.forEach((pageLines, index) => {
+    const pageObjectNumber = 4 + index * 2;
+    const contentObjectNumber = pageObjectNumber + 1;
+    const stream = buildPdfStream(pageLines);
+
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`
+    );
+    objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+  });
+
+  let pdf = "%PDF-1.4\n";
+  const offsets: number[] = [0];
+
+  objects.forEach((object, index) => {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+
+  const xrefStart = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+  });
+
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+function buildPdfStream(lines: string[]) {
+  const commands = [
+    "BT",
+    "/F1 11 Tf",
+    "50 760 Td",
+    "14 TL",
+  ];
+
+  lines.forEach((line, index) => {
+    const escaped = escapePdfText(line);
+    commands.push(`(${escaped}) Tj`);
+
+    if (index < lines.length - 1) {
+      commands.push("T*");
+    }
+  });
+
+  commands.push("ET");
+
+  return commands.join("\n");
+}
+
+function escapePdfText(value: string) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)");
+}
+
+function chunkLines(lines: string[], size: number) {
+  const chunks: string[][] = [];
+
+  for (let index = 0; index < lines.length; index += size) {
+    chunks.push(lines.slice(index, index + size));
+  }
+
+  return chunks;
 }

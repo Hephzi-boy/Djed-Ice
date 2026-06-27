@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 import {
+  MedosPage,
   Modal,
+  Panel,
+  PanelHeader,
   PlusIcon,
   PrimaryButton,
   SearchIcon,
 } from "../_components/medos-ui";
-import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import {
   createPatient,
@@ -51,7 +53,6 @@ export default function PatientsPage() {
     address: "",
   });
   const { role, session } = useWorkspaceUser();
-  const { theme } = useWorkspaceTheme();
 
   useEffect(() => {
     let active = true;
@@ -215,23 +216,57 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1220px] space-y-5">
-      <section className="flex flex-col gap-4 rounded-[24px] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:flex-row sm:items-start sm:justify-between sm:px-7">
-        <div>
-          <h1 className="text-[30px] font-semibold tracking-tight text-slate-950">Patients</h1>
-          <p className="mt-2 text-[15px] leading-7 text-slate-600">{description}</p>
-        </div>
-        {canRegisterPatients ? (
-          <PrimaryButton icon={<PlusIcon className="h-4 w-4" />} onClick={() => setCreateOpen(true)} className="h-10 self-start px-5 text-sm">
-            Add New Patient
+    <MedosPage
+      sectionNumber="03"
+      sectionTitle="Patient Records"
+      title="Patients"
+      description={description}
+      action={
+        canRegisterPatients ? (
+          <PrimaryButton icon={<PlusIcon className="h-4 w-4" />} onClick={() => setCreateOpen(true)} className="h-11 px-5">
+            Add new patient
           </PrimaryButton>
-        ) : null}
-      </section>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr_1fr]">
+        <SummaryCard
+          label="Registry overview"
+          title={`+${patients.length}`}
+          body={`${activeCareCount} patients currently in active care.`}
+          accent="dark"
+        />
+        <SummaryCard
+          label="Next appointment"
+          title={nextAppointment?.patientName || "No upcoming visit"}
+          body={
+            nextAppointment
+              ? `${formatAppointmentLabel(nextAppointment.appointmentDate)} | ${nextAppointment.visitReason || "Visit scheduled"}`
+              : "No appointment is currently queued."
+          }
+          accent="light"
+        />
+        <SummaryCard
+          label="Clinical note"
+          title={highlightPatient?.name || "Patient review"}
+          body={
+            highlightPatient?.illness
+              ? `Recent record suggests ${highlightPatient.illness.toLowerCase()}.`
+              : "Review patient history before sending a case to prescriptions."
+          }
+          accent="blue"
+        />
+      </div>
 
-      <section className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <Panel>
+        <PanelHeader
+          title="Patient directory"
+          subtitle="Filter by name, status, or recent visits, then open a record for detail."
+        />
+
+        <div className="flex flex-col gap-4 border-b border-[color:var(--border-subtle)] px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 xl:flex-row xl:items-center">
-            <label className="flex h-11 min-w-0 flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500">
+            <label className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] px-4 text-[color:var(--muted)]">
               <SearchIcon className="h-4 w-4 shrink-0" />
               <input
                 value={query}
@@ -239,8 +274,8 @@ export default function PatientsPage() {
                   setQuery(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Filter by Status, ID, or patient..."
-                className="w-full bg-transparent text-[15px] text-slate-900 outline-none placeholder:text-slate-400"
+                placeholder="Search patient, phone, age, or ID"
+                className="w-full bg-transparent text-[15px] text-[color:var(--foreground)] outline-none placeholder:text-[color:var(--muted-soft)]"
               />
             </label>
 
@@ -257,10 +292,10 @@ export default function PatientsPage() {
                       setStatusFilter(status);
                       setPage(1);
                     }}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
                       active
-                        ? "border-sky-700 bg-sky-700 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                        ? "border-[color:var(--accent-strong)] bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white"
+                        : "border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] text-[color:var(--muted)] hover:border-[color:var(--border-strong)]"
                     }`}
                   >
                     {status}
@@ -272,14 +307,14 @@ export default function PatientsPage() {
           </div>
 
           <div className="flex items-center gap-3 self-end lg:self-auto">
-            <span className="text-xs font-medium text-slate-500">Sort by:</span>
+            <span className="med-label">Sort by</span>
             <select
               value={sortBy}
               onChange={(event) => {
                 setSortBy(event.target.value as SortOption);
                 setPage(1);
               }}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none"
+              className="med-select h-11 w-[160px]"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -293,33 +328,33 @@ export default function PatientsPage() {
         {pagedPatients.length ? (
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-slate-50/80">
-                <tr className="border-b border-slate-200">
-                  {["Patient ID", "Name", "Age & Gender", "Phone", "Last Visit", "Status", "Actions"].map((heading) => (
-                    <th
-                      key={heading}
-                      className="px-4 py-4 text-left text-[10px] font-medium uppercase tracking-[0.24em] text-slate-500"
-                    >
-                      {heading}
+              <thead className="bg-[color:var(--surface-muted)]">
+                <tr className="border-b border-[color:var(--border-subtle)]">
+                  {["Patient ID", "Name", "Age and Gender", "Phone", "Last Visit", "Status", "Actions"].map((heading) => (
+                    <th key={heading} className="px-4 py-4 text-left">
+                      <span className="med-label">{heading}</span>
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {pagedPatients.map((patient) => (
-                  <tr key={`${patient.id}-${patient.name}`} className="border-b border-slate-200 last:border-b-0 hover:bg-slate-50/70">
-                    <td className="whitespace-nowrap px-4 py-5 text-sm text-slate-500">{patient.id || "--"}</td>
+                  <tr
+                    key={`${patient.id}-${patient.name}`}
+                    className="border-b border-[color:var(--border-subtle)] last:border-b-0 hover:bg-[color:var(--surface-elevated)]"
+                  >
+                    <td className="whitespace-nowrap px-4 py-5 text-sm text-[color:var(--muted)]">{patient.id || "--"}</td>
                     <td className="px-4 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 text-xs font-semibold text-sky-700">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/10 text-xs font-semibold text-sky-700">
                           {makeInitials(patient.name)}
                         </div>
-                        <p className="text-sm font-semibold text-slate-950">{patient.name}</p>
+                        <p className="text-sm font-semibold text-[color:var(--foreground-soft)]">{patient.name}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-5 text-sm text-slate-600">{patient.age || "--"}</td>
-                    <td className="px-4 py-5 text-sm text-slate-600">{patient.phone || "--"}</td>
-                    <td className="px-4 py-5 text-sm text-slate-600">{patient.lastVisit || "--"}</td>
+                    <td className="px-4 py-5 text-sm text-[color:var(--muted)]">{patient.age || "--"}</td>
+                    <td className="px-4 py-5 text-sm text-[color:var(--muted)]">{patient.phone || "--"}</td>
+                    <td className="px-4 py-5 text-sm text-[color:var(--muted)]">{patient.lastVisit || "--"}</td>
                     <td className="px-4 py-5">
                       <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${statusBadgeClass(patient.status.tone)}`}>
                         {patient.status.label}
@@ -329,7 +364,7 @@ export default function PatientsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedPatient(patient)}
-                        className="h-9 rounded-xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-sky-300 hover:bg-sky-50 hover:text-sky-700"
+                        className="rounded-2xl border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] px-4 py-2 text-sm font-semibold text-[color:var(--foreground)] transition hover:border-[color:var(--border-strong)]"
                       >
                         Open
                       </button>
@@ -340,11 +375,11 @@ export default function PatientsPage() {
             </table>
           </div>
         ) : (
-          <p className="px-6 py-8 text-sm text-slate-600">No patient records were found.</p>
+          <p className="px-6 py-8 text-sm text-[color:var(--muted)]">No patient records were found.</p>
         )}
 
-        <div className="flex flex-col gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-500">
+        <div className="flex flex-col gap-3 border-t border-[color:var(--border-subtle)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-[color:var(--muted)]">
             Showing {pagedPatients.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0}-
             {Math.min(currentPage * PAGE_SIZE, processedPatients.length)} of {processedPatients.length} patients
           </p>
@@ -362,36 +397,7 @@ export default function PatientsPage() {
             </PagerButton>
           </div>
         </div>
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr_1fr]">
-        <SummaryCard
-          label="Registry Overview"
-          title={`+${patients.length}`}
-          body={`${activeCareCount} patients currently in active care.`}
-          accent="dark"
-        />
-        <SummaryCard
-          label="Next Appointment"
-          title={nextAppointment?.patientName || "No upcoming visit"}
-          body={
-            nextAppointment
-              ? `${formatAppointmentLabel(nextAppointment.appointmentDate)} • ${nextAppointment.visitReason || "Visit scheduled"}`
-              : "No appointment is currently queued."
-          }
-          accent="light"
-        />
-        <SummaryCard
-          label="Clinical Note"
-          title={highlightPatient?.name || "Patient review"}
-          body={
-            highlightPatient?.illness
-              ? `Recent record suggests ${highlightPatient.illness.toLowerCase()}.`
-              : "Review patient history before sending a case to prescriptions."
-          }
-          accent="blue"
-        />
-      </div>
+      </Panel>
 
       <Modal
         open={createOpen}
@@ -417,14 +423,14 @@ export default function PatientsPage() {
             <input
               value={form.fullName}
               onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-input"
             />
           </FormField>
           <FormField label="Gender">
             <select
               value={form.gender}
               onChange={(event) => setForm((current) => ({ ...current, gender: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-select"
             >
               <option value="">Select gender</option>
               <option value="Male">Male</option>
@@ -435,7 +441,7 @@ export default function PatientsPage() {
             <input
               value={form.phone}
               onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-input"
             />
           </FormField>
           <FormField label="Date of birth">
@@ -443,19 +449,19 @@ export default function PatientsPage() {
               type="date"
               value={form.dateOfBirth}
               onChange={(event) => setForm((current) => ({ ...current, dateOfBirth: event.target.value }))}
-              className={inputClassName(theme)}
+              className="med-input"
             />
           </FormField>
           <FormField label="Address" className="md:col-span-2">
             <textarea
               value={form.address}
               onChange={(event) => setForm((current) => ({ ...current, address: event.target.value }))}
-              className={`${inputClassName(theme)} min-h-24 py-3`}
+              className="med-textarea"
             />
           </FormField>
         </div>
         {error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-500/10 px-4 py-3 text-sm text-rose-700">
             {error}
           </div>
         ) : null}
@@ -471,11 +477,8 @@ export default function PatientsPage() {
         description="Patient record details currently available in the workspace."
         footer={
           activePatient ? (
-            <PrimaryButton
-              onClick={() => handleOpenPrescription(activePatient)}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Open in Prescription
+            <PrimaryButton onClick={() => handleOpenPrescription(activePatient)}>
+              Open in prescription
             </PrimaryButton>
           ) : null
         }
@@ -493,7 +496,7 @@ export default function PatientsPage() {
           />
         </div>
       </Modal>
-    </div>
+    </MedosPage>
   );
 }
 
@@ -510,20 +513,20 @@ function SummaryCard({
 }) {
   const cardClass =
     accent === "dark"
-      ? "bg-slate-950 text-white"
+      ? "bg-[#0b2136] text-white"
       : accent === "blue"
-        ? "bg-[#2f78e8] text-white"
-        : "bg-white text-slate-950";
+        ? "bg-[linear-gradient(135deg,#0ea5b7,#2563eb)] text-white"
+        : "med-surface-strong text-[color:var(--foreground-soft)]";
 
-  const bodyClass = accent === "light" ? "text-slate-600" : "text-white/75";
-  const borderClass = accent === "light" ? "border border-slate-200/80" : "border border-transparent";
+  const bodyClass = accent === "light" ? "text-[color:var(--muted)]" : "text-white/80";
+  const borderClass = accent === "light" ? "" : "border border-transparent";
 
   return (
-    <div className={`rounded-[20px] px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)] ${cardClass} ${borderClass}`}>
-      <p className={`text-[10px] font-medium uppercase tracking-[0.22em] ${accent === "light" ? "text-slate-500" : "text-white/65"}`}>
+    <div className={`rounded-[24px] px-5 py-5 shadow-[var(--shadow-soft)] ${cardClass} ${borderClass}`}>
+      <p className={`text-[10px] font-medium uppercase tracking-[0.22em] ${accent === "light" ? "text-[color:var(--muted)]" : "text-white/70"}`}>
         {label}
       </p>
-      <p className="mt-3 text-3xl font-semibold tracking-tight">{title}</p>
+      <p className="mt-3 text-3xl font-extrabold tracking-[-0.04em]">{title}</p>
       <p className={`mt-3 text-sm leading-6 ${bodyClass}`}>{body}</p>
     </div>
   );
@@ -545,10 +548,10 @@ function PagerButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-medium transition ${
+      className={`flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-sm font-semibold transition ${
         active
-          ? "bg-sky-700 text-white"
-          : "border border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+          ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white"
+          : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] text-[color:var(--muted)] hover:border-[color:var(--border-strong)]"
       } disabled:cursor-not-allowed disabled:opacity-40`}
     >
       {children}
@@ -567,9 +570,7 @@ function FormField({
 }) {
   return (
     <label className={`block ${className}`}>
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-        {label}
-      </span>
+      <span className="med-label mb-2 block">{label}</span>
       {children}
     </label>
   );
@@ -586,12 +587,8 @@ function ReadField({
 }) {
   return (
     <div className={className}>
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-        {label}
-      </span>
-      <div className="flex h-11 items-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-[15px] text-slate-800">
-        {value}
-      </div>
+      <span className="med-label mb-2 block">{label}</span>
+      <div className="med-input flex h-12 items-center">{value}</div>
     </div>
   );
 }
@@ -629,22 +626,14 @@ function formatAppointmentLabel(value: string | null) {
 function statusBadgeClass(tone: PatientRecord["status"]["tone"]) {
   switch (tone) {
     case "red":
-      return "bg-rose-50 text-rose-700";
+      return "bg-rose-500/10 text-rose-700";
     case "green":
-      return "bg-emerald-50 text-emerald-700";
+      return "bg-emerald-500/10 text-emerald-700";
     case "amber":
-      return "bg-amber-50 text-amber-700";
+      return "bg-amber-500/10 text-amber-700";
     default:
-      return "bg-slate-100 text-slate-600";
+      return "bg-slate-500/10 text-[color:var(--muted)]";
   }
-}
-
-function inputClassName(theme: "light" | "dark") {
-  return `h-11 w-full rounded-xl px-3 text-[15px] outline-none transition ${
-    theme === "dark"
-      ? "border border-slate-800 bg-slate-900 text-slate-900 placeholder:text-slate-500 focus:border-sky-700 focus:bg-slate-900"
-      : "border border-slate-200 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white"
-  }`;
 }
 
 function getLatestPatientAppointment(

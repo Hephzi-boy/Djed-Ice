@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode, SVGProps } from "react";
-import { useState, useEffect } from "react";
-import { useWorkspaceTheme } from "./workspace-theme-context";
+import { useEffect, useState } from "react";
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -14,11 +13,11 @@ export function buttonClassName({
   fullWidth?: boolean;
 } = {}) {
   return [
-    "ice-button group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-xl px-4 text-sm font-medium shadow-sm transition-[transform,box-shadow,background-color,color,border-color] duration-200",
+    "ice-button group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-2xl px-4 text-sm font-semibold transition-[transform,box-shadow,background-color,color,border-color] duration-200",
     fullWidth ? "w-full" : "",
     subtle
-      ? "ice-button--subtle border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-      : "border border-sky-700 bg-sky-700 text-slate-900 hover:bg-sky-800 disabled:cursor-not-allowed disabled:border-sky-400 disabled:bg-sky-400",
+      ? "ice-button--subtle border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] text-[color:var(--foreground)] shadow-[var(--shadow-soft)] hover:-translate-y-0.5 hover:border-[color:var(--border-strong)] hover:bg-[color:var(--surface-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+      : "border border-[color:var(--accent-strong)] bg-[linear-gradient(135deg,var(--accent),var(--accent-strong))] text-white shadow-[0_18px_40px_rgba(8,47,73,0.22)] hover:-translate-y-0.5 hover:shadow-[0_24px_56px_rgba(8,47,73,0.28)] disabled:cursor-not-allowed disabled:border-transparent disabled:opacity-60",
   ]
     .filter(Boolean)
     .join(" ");
@@ -165,29 +164,22 @@ export function MedosPage(props: {
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const { title, description, action, children } = props;
-  const { theme } = useWorkspaceTheme();
+  const { sectionNumber, sectionTitle, title, description, action, children } = props;
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-8">
-      <div
-        className={`rounded-[24px] px-6 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.05)] sm:px-8 ${
-          theme === "dark"
-            ? "border border-slate-800 bg-slate-950/90"
-            : "border border-slate-200/80 bg-white"
-        }`}
-      >
+    <div className="mx-auto max-w-[1200px] space-y-6">
+      <div className="med-hero rounded-[30px] px-6 py-6 sm:px-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <h1
-                className="text-3xl font-semibold tracking-tight sm:text-4xl text-slate-950"
-              >
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] px-3 py-1.5">
+              <span className="med-kicker">{sectionNumber}</span>
+              <span className="text-xs font-medium text-[color:var(--muted)]">{sectionTitle}</span>
+            </div>
+            <div className="space-y-3">
+              <h1 className="text-3xl font-extrabold tracking-[-0.04em] text-[color:var(--foreground-soft)] sm:text-[2.8rem]">
                 {title}
               </h1>
-              <p
-                className="max-w-2xl text-[15px] leading-7 text-slate-600"
-              >
+              <p className="max-w-2xl text-[15px] leading-7 text-[color:var(--muted)] sm:text-base">
                 {description}
               </p>
             </div>
@@ -240,19 +232,7 @@ export function Panel({
   children: ReactNode;
   className?: string;
 }) {
-  const { theme } = useWorkspaceTheme();
-
-  return (
-    <section
-      className={`overflow-hidden rounded-[24px] shadow-[0_12px_34px_rgba(15,23,42,0.06)] ${
-        theme === "dark"
-          ? "border border-slate-800 bg-slate-950/90"
-          : "border border-slate-200/80 bg-white"
-      } ${className}`}
-    >
-      {children}
-    </section>
-  );
+  return <section className={`med-surface overflow-hidden rounded-[28px] ${className}`}>{children}</section>;
 }
 
 export function PanelHeader({
@@ -264,23 +244,11 @@ export function PanelHeader({
   subtitle?: string;
   right?: ReactNode;
 }) {
-  const { theme } = useWorkspaceTheme();
-
   return (
-    <div
-      className={`flex items-start justify-between gap-4 px-6 py-5 ${
-        theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"
-      }`}
-    >
+    <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-subtle)] px-6 py-5">
       <div>
-        <h2 className="text-[15px] font-semibold text-slate-950">
-          {title}
-        </h2>
-        {subtitle ? (
-          <p className="mt-1 text-sm text-slate-600">
-            {subtitle}
-          </p>
-        ) : null}
+        <h2 className="text-[15px] font-semibold text-[color:var(--foreground-soft)]">{title}</h2>
+        {subtitle ? <p className="mt-1 text-sm text-[color:var(--muted)]">{subtitle}</p> : null}
       </div>
       {right}
     </div>
@@ -294,33 +262,15 @@ export function DataPill({
   children: ReactNode;
   tone?: "neutral" | "blue" | "green" | "red" | "amber";
 }) {
-  const { theme } = useWorkspaceTheme();
-  const tones =
-    theme === "dark"
-      ? {
-          neutral: "bg-slate-800 text-slate-900",
-          blue: "bg-sky-950 text-sky-900",
-          green: "bg-emerald-950 text-emerald-900",
-          red: "bg-rose-950 text-rose-900",
-          amber: "bg-amber-950 text-amber-900",
-        }
-      : {
-          neutral: "bg-slate-100 text-slate-600",
-          blue: "bg-sky-50 text-sky-700",
-          green: "bg-emerald-50 text-emerald-700",
-          red: "bg-rose-50 text-rose-700",
-          amber: "bg-amber-50 text-amber-700",
-        };
-  const toneClass = tones[tone];
-  const surfaceClass = theme === "dark" ? "border border-transparent" : "";
+  const toneClass = {
+    neutral: "border-[color:var(--border-subtle)] bg-[color:var(--surface-elevated)] text-[color:var(--foreground)]",
+    blue: "border border-sky-200/70 bg-sky-500/10 text-sky-700",
+    green: "border border-emerald-200/70 bg-emerald-500/10 text-emerald-700",
+    red: "border border-rose-200/70 bg-rose-500/10 text-rose-700",
+    amber: "border border-amber-200/70 bg-amber-500/10 text-amber-700",
+  }[tone];
 
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClass} ${surfaceClass}`}
-    >
-      {children}
-    </span>
-  );
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${toneClass}`}>{children}</span>;
 }
 
 export function Modal({
@@ -338,8 +288,6 @@ export function Modal({
   footer?: ReactNode;
   onClose: () => void;
 }) {
-  const { theme } = useWorkspaceTheme();
-
   useEffect(() => {
     if (!open) {
       return;
@@ -382,44 +330,22 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative z-10 mx-auto my-4 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[28px] shadow-[0_30px_80px_rgba(15,23,42,0.35)] transition-all duration-200 sm:my-8 sm:max-h-[calc(100vh-4rem)] ${
+        className={`med-surface-strong relative z-10 mx-auto my-4 flex max-h-[calc(100vh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[30px] transition-all duration-200 sm:my-8 sm:max-h-[calc(100vh-4rem)] ${
           open ? "translate-y-0 scale-100 opacity-100" : "translate-y-6 scale-[0.985] opacity-0"
-        } ${
-          theme === "dark"
-            ? "border border-slate-800 bg-slate-950"
-            : "border border-slate-200 bg-white"
         }`}
       >
-        <div className={`shrink-0 flex items-start justify-between gap-4 px-6 py-5 ${theme === "dark" ? "border-b border-slate-800" : "border-b border-slate-200"}`}>
+        <div className="shrink-0 flex items-start justify-between gap-4 border-b border-[color:var(--border-subtle)] px-6 py-5">
           <div>
-            <h2 className="text-xl font-semibold text-slate-950">
-              {title}
-            </h2>
-            {description ? (
-              <p className="mt-1 text-sm text-slate-600">
-                {description}
-              </p>
-            ) : null}
+            <h2 className="text-xl font-semibold text-[color:var(--foreground-soft)]">{title}</h2>
+            {description ? <p className="mt-1 text-sm text-[color:var(--muted)]">{description}</p> : null}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`${buttonClassName({ subtle: true })} h-10 px-3 shadow-none ${
-              theme === "dark"
-                ? "border-slate-800 bg-slate-900 text-slate-900 hover:border-slate-700 hover:bg-slate-800"
-                : ""
-            }`}
-          >
+          <button type="button" onClick={onClose} className={`${buttonClassName({ subtle: true })} h-10 px-3 shadow-none`}>
             <ButtonFx />
             <span className="relative z-10">Close</span>
           </button>
         </div>
         <div className="min-h-0 overflow-y-auto px-6 py-5">{children}</div>
-        {footer ? (
-          <div className={`shrink-0 flex flex-wrap items-center justify-end gap-3 px-6 py-5 ${theme === "dark" ? "border-t border-slate-800" : "border-t border-slate-200"}`}>
-            {footer}
-          </div>
-        ) : null}
+        {footer ? <div className="shrink-0 flex flex-wrap items-center justify-end gap-3 border-t border-[color:var(--border-subtle)] px-6 py-5">{footer}</div> : null}
       </div>
     </div>
   );
@@ -447,17 +373,15 @@ export function MetricCard({
       ? "text-rose-600"
       : tone === "green"
         ? "text-emerald-600"
-        : "text-slate-950";
+        : "text-[color:var(--foreground-soft)]";
 
   return (
     <Panel>
       <div className={`h-1 w-full ${accentTone}`} />
       <div className="space-y-3 px-6 py-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-slate-600">
-          {label}
-        </p>
+        <p className="med-label">{label}</p>
         <p className={`text-4xl font-semibold tracking-tight ${valueTone}`}>{value}</p>
-        <p className="text-sm text-slate-600">{subtext}</p>
+        <p className="text-sm text-[color:var(--muted)]">{subtext}</p>
       </div>
     </Panel>
   );
@@ -483,17 +407,19 @@ export function Toast({
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-4 right-4 z-50 animate-slide-in">
-      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 shadow-lg">
+      <div className="med-surface-strong flex items-center gap-3 rounded-2xl border-emerald-200/60 px-4 py-3">
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
           <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-sm font-medium text-emerald-900">{message}</p>
+        <p className="text-sm font-medium text-[color:var(--foreground)]">{message}</p>
       </div>
     </div>
   );

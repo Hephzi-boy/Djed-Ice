@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
   ButtonFx,
+  MedosPage,
+  MetricCard,
   Modal,
   Panel,
+  PanelHeader,
   PatientsIcon,
   PrimaryButton,
   QueueIcon,
@@ -15,7 +18,6 @@ import {
   SettingsIcon,
   buttonClassName,
 } from "../_components/medos-ui";
-import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import { fetchDashboardData, type DashboardData } from "@/lib/workspace-data";
 import type { UserRole } from "@/lib/roles";
@@ -24,7 +26,6 @@ export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [selectedAction, setSelectedAction] = useState<RoleAction | null>(null);
   const { role, displayName } = useWorkspaceUser();
-  const { theme } = useWorkspaceTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -47,23 +48,23 @@ export default function DashboardPage() {
   const actions = useMemo(() => getRoleActions(role), [role]);
 
   return (
-    <div className="mx-auto max-w-[1220px] space-y-5">
-      <section className="relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white px-5 py-6 shadow-[0_12px_34px_rgba(15,23,42,0.06)] sm:px-7">
-        <div className="absolute right-3 top-1/2 hidden h-40 w-40 -translate-y-1/2 rounded-full bg-slate-100 md:block" />
-        <div className="absolute right-20 top-4 hidden h-10 w-10 rounded-full border border-slate-200 bg-white/70 md:block" />
-        <div className="relative max-w-2xl">
-          <h1 className="text-[30px] font-semibold tracking-tight text-slate-950 sm:text-[34px]">
-            {view.title}
-          </h1>
-          <p className="mt-2 max-w-xl text-[15px] leading-7 text-slate-600">
-            {view.description}
-          </p>
-        </div>
-      </section>
-
+    <MedosPage
+      sectionNumber="01"
+      sectionTitle="Hospital Command"
+      title={view.title}
+      description={view.description}
+      action={
+        canOpenReports ? (
+          <Link href="/reports" className={buttonClassName({ subtle: true })}>
+            <ButtonFx />
+            <span className="relative z-10">Open reports</span>
+          </Link>
+        ) : undefined
+      }
+    >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => (
-          <DashboardMetricTile
+          <MetricCard
             key={metric.label}
             label={metric.label}
             value={metric.value}
@@ -74,47 +75,43 @@ export default function DashboardPage() {
       </div>
 
       {actions.length ? (
-        <Panel className="border-slate-200/80 bg-white">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-[22px] font-semibold tracking-tight text-slate-950">Action center</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Use role-specific actions to move directly into the work assigned to this account.
-            </p>
-          </div>
-          <div className="grid gap-4 px-6 py-5 md:grid-cols-2 xl:grid-cols-3">
+        <Panel>
+          <PanelHeader
+            title="Action center"
+            subtitle="Jump directly into the role-aware work that matters next."
+          />
+          <div className="grid gap-4 px-5 py-5 md:grid-cols-2 xl:grid-cols-3">
             {actions.map((action) => (
               <button
                 key={action.id}
                 type="button"
                 onClick={() => setSelectedAction(action)}
-                className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-sky-50/40"
+                className="group med-surface-strong rounded-[24px] p-5 text-left transition hover:-translate-y-1"
               >
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${action.iconTone}`}>
+                <div className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border ${action.iconTone}`}>
                   <action.icon className="h-4 w-4" />
                 </div>
-                <div className="mt-4">
-                  <p className="text-sm font-semibold text-slate-950">{action.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{action.detail}</p>
-                </div>
+                <p className="mt-5 text-lg font-semibold tracking-[-0.03em] text-[color:var(--foreground-soft)]">
+                  {action.title}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-[color:var(--muted)]">{action.detail}</p>
               </button>
             ))}
           </div>
         </Panel>
       ) : null}
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_330px]">
-        <Panel className="border-slate-200/80 bg-white">
-          <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-            <div>
-              <h2 className="text-[22px] font-semibold tracking-tight text-slate-950">{view.primaryTitle}</h2>
-              <p className="mt-1 text-sm text-slate-600">{view.primarySubtitle}</p>
-            </div>
-            {canOpenReports ? (
-              <Link href="/reports" className="pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700 hover:text-sky-800">
-                Open reports
-              </Link>
-            ) : null}
-          </div>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <Panel>
+          <PanelHeader
+            title={view.primaryTitle}
+            subtitle={view.primarySubtitle}
+            right={
+              <div className="med-chip med-chip--accent hidden sm:inline-flex">
+                <span>{canOpenReports ? "AI review enabled" : "Role guidance"}</span>
+              </div>
+            }
+          />
           <div className="space-y-3 px-4 py-4 sm:px-5">
             {canOpenReports && data?.reviews.length ? (
               data.reviews.map((item) => (
@@ -131,13 +128,14 @@ export default function DashboardPage() {
           </div>
         </Panel>
 
-        <Panel className="border-slate-200/80 bg-white">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <h2 className="text-[18px] font-semibold tracking-tight text-slate-950">{view.secondaryTitle}</h2>
-            <p className="mt-1 max-w-[24ch] text-xs leading-5 text-slate-600">{view.secondarySubtitle}</p>
-          </div>
-          <div className="relative px-5 py-3">
-            <div className="absolute bottom-6 left-[26px] top-6 w-px bg-slate-200" />
+        <Panel>
+          <PanelHeader
+            title={view.secondaryTitle}
+            subtitle={view.secondarySubtitle}
+            right={<span className="med-label hidden sm:inline">{data?.activity.length || 0} events</span>}
+          />
+          <div className="relative px-5 py-4">
+            <div className="absolute bottom-6 left-[29px] top-6 w-px bg-[color:var(--border-subtle)]" />
             {data?.activity.length ? (
               data.activity.map((entry, index) => (
                 <ActivityRow
@@ -182,55 +180,19 @@ export default function DashboardPage() {
           {selectedAction?.points.map((point) => (
             <div
               key={point}
-              className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
-                theme === "dark"
-                  ? "border border-slate-800 bg-slate-900 text-slate-900"
-                  : "border border-slate-200 bg-slate-50 text-slate-600"
-              }`}
+              className="med-surface-muted rounded-2xl px-4 py-3 text-sm leading-7 text-[color:var(--muted)]"
             >
               {point}
             </div>
           ))}
         </div>
       </Modal>
-    </div>
+    </MedosPage>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
-  return <p className="px-6 py-6 text-sm text-slate-600">{message}</p>;
-}
-
-function DashboardMetricTile({
-  label,
-  value,
-  subtext,
-  tone = "slate",
-}: {
-  label: string;
-  value: string;
-  subtext: string;
-  tone?: "slate" | "red" | "green";
-}) {
-  const toneClass =
-    tone === "red"
-      ? "bg-rose-500"
-      : tone === "green"
-        ? "bg-emerald-500"
-        : "bg-sky-600";
-
-  return (
-    <div className="overflow-hidden rounded-[18px] border border-slate-200/80 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-      <div className={`h-1 ${toneClass}`} />
-      <div className="space-y-3 px-5 py-5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
-          {label}
-        </p>
-        <p className="text-4xl font-semibold tracking-tight text-slate-950">{value}</p>
-        <p className="max-w-[14ch] text-sm leading-5 text-slate-600">{subtext}</p>
-      </div>
-    </div>
-  );
+  return <p className="px-6 py-6 text-sm text-[color:var(--muted)]">{message}</p>;
 }
 
 function ReviewRow({
@@ -245,31 +207,31 @@ function ReviewRow({
   const percent = parseConfidence(confidence);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+    <div className="med-surface-strong rounded-[24px] px-4 py-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-700">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-700">
             <ReportIcon className="h-4 w-4" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-semibold text-slate-950">{title}</p>
-            <p className="mt-1 text-xs text-slate-500">{identifier}</p>
+            <p className="truncate text-[15px] font-semibold text-[color:var(--foreground-soft)]">{title}</p>
+            <p className="mt-1 text-xs text-[color:var(--muted)]">{identifier}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="w-28">
-            <div className="mb-1 flex items-center justify-end text-[11px] font-semibold text-slate-600">
+            <div className="mb-1 flex items-center justify-end text-[11px] font-semibold text-[color:var(--muted)]">
               {confidence || "--"}
             </div>
-            <div className="h-1.5 rounded-full bg-slate-200">
-              <div className="h-1.5 rounded-full bg-sky-700 transition-all" style={{ width: `${percent}%` }} />
+            <div className="h-1.5 rounded-full bg-[color:var(--surface-muted)]">
+              <div
+                className="h-1.5 rounded-full bg-[linear-gradient(90deg,var(--accent),var(--accent-strong))] transition-all"
+                style={{ width: `${percent}%` }}
+              />
             </div>
           </div>
-          <Link
-            href="/reports"
-            className={`${buttonClassName({ subtle: true })} h-9 px-4 text-xs shadow-none`}
-          >
+          <Link href="/reports" className={`${buttonClassName({ subtle: true })} h-9 px-4 text-xs shadow-none`}>
             <ButtonFx />
             <span className="relative z-10">Review</span>
           </Link>
@@ -292,23 +254,27 @@ function ActivityRow({
 }) {
   return (
     <div className="relative flex gap-3 py-3">
-      <div className="relative z-10 mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-white">
+      <div className="relative z-10 mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[color:var(--surface-strong)]">
         <span
           className={`block rounded-full ${
-            emphasized ? "h-4 w-4 border-2 border-sky-700" : "h-2.5 w-2.5 bg-slate-300"
+            emphasized
+              ? "h-4 w-4 border-2 border-[color:var(--accent-strong)]"
+              : "h-2.5 w-2.5 bg-[color:var(--border-strong)]"
           }`}
         >
-          {emphasized ? <span className="m-auto mt-[3px] block h-1.5 w-1.5 rounded-full bg-sky-700" /> : null}
+          {emphasized ? (
+            <span className="m-auto mt-[3px] block h-1.5 w-1.5 rounded-full bg-[color:var(--accent-strong)]" />
+          ) : null}
         </span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-[12px] font-semibold leading-5 text-slate-900">{title}</p>
-          <p className="shrink-0 text-[11px] font-medium text-slate-500">{time}</p>
+          <p className="text-[12px] font-semibold leading-5 text-[color:var(--foreground-soft)]">{title}</p>
+          <p className="shrink-0 text-[11px] font-medium text-[color:var(--muted)]">{time}</p>
         </div>
-        {meta ? <p className="mt-1 text-[12px] leading-5 text-slate-600">{meta}</p> : null}
+        {meta ? <p className="mt-1 text-[12px] leading-6 text-[color:var(--muted)]">{meta}</p> : null}
         {emphasized ? (
-          <div className="mt-2 inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-medium text-sky-700">
+          <div className="mt-2 inline-flex rounded-full border border-sky-200/70 bg-sky-500/10 px-2.5 py-1 text-[10px] font-medium text-sky-700">
             System suggested review
           </div>
         ) : null}
@@ -346,11 +312,8 @@ function RoleTasks({ role }: { role: UserRole | null }) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <div
-          key={item}
-          className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm"
-        >
-          <p className="text-sm text-slate-600">{item}</p>
+        <div key={item} className="med-surface-strong rounded-[22px] px-5 py-4">
+          <p className="text-sm leading-7 text-[color:var(--muted)]">{item}</p>
         </div>
       ))}
     </div>
@@ -379,7 +342,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/settings",
           cta: "Open settings",
           icon: SettingsIcon,
-          iconTone: "border-amber-100 bg-amber-50 text-amber-700",
+          iconTone: "border-amber-200/70 bg-amber-500/10 text-amber-700",
           points: [
             "Update hospital-wide settings and review account scope.",
             "Monitor subscription usage and current plan state.",
@@ -393,7 +356,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/patients",
           cta: "Open patients",
           icon: PatientsIcon,
-          iconTone: "border-sky-100 bg-sky-50 text-sky-700",
+          iconTone: "border-sky-200/70 bg-sky-500/10 text-sky-700",
           points: [
             "Inspect current patient records and intake flow.",
             "Review the operational side of registration and follow-up.",
@@ -406,7 +369,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/appointments",
           cta: "Open appointments",
           icon: QueueIcon,
-          iconTone: "border-emerald-100 bg-emerald-50 text-emerald-700",
+          iconTone: "border-emerald-200/70 bg-emerald-500/10 text-emerald-700",
           points: [
             "Review the appointment queue and current flow pressure.",
             "Use dashboard metrics to spot operational bottlenecks.",
@@ -422,7 +385,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/appointments",
           cta: "Open appointments",
           icon: QueueIcon,
-          iconTone: "border-emerald-100 bg-emerald-50 text-emerald-700",
+          iconTone: "border-emerald-200/70 bg-emerald-500/10 text-emerald-700",
           points: [
             "Adjust visit priority and status as the queue changes.",
             "Keep assigned consultations moving with current clinical context.",
@@ -435,7 +398,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/reports",
           cta: "Open reports",
           icon: ReportIcon,
-          iconTone: "border-sky-100 bg-sky-50 text-sky-700",
+          iconTone: "border-sky-200/70 bg-sky-500/10 text-sky-700",
           points: [
             "Draft discharge, referral, or summary reports.",
             "Use AI output as a draft, then review before final use.",
@@ -448,7 +411,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/patients",
           cta: "Open patients",
           icon: PatientsIcon,
-          iconTone: "border-indigo-100 bg-indigo-50 text-indigo-700",
+          iconTone: "border-indigo-200/70 bg-indigo-500/10 text-indigo-700",
           points: [
             "Search records quickly by name, ID, or phone.",
             "Inspect current status and last visit details.",
@@ -464,7 +427,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/patients",
           cta: "Open patients",
           icon: PatientsIcon,
-          iconTone: "border-sky-100 bg-sky-50 text-sky-700",
+          iconTone: "border-sky-200/70 bg-sky-500/10 text-sky-700",
           points: [
             "Capture core patient details needed for the clinical workflow.",
             "Keep records current for downstream doctor and reception use.",
@@ -477,7 +440,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/appointments",
           cta: "Open appointments",
           icon: QueueIcon,
-          iconTone: "border-emerald-100 bg-emerald-50 text-emerald-700",
+          iconTone: "border-emerald-200/70 bg-emerald-500/10 text-emerald-700",
           points: [
             "Adjust queue state as patient flow changes.",
             "Coordinate follow-through between intake and consultation.",
@@ -490,7 +453,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/patients",
           cta: "Open records",
           icon: PatientsIcon,
-          iconTone: "border-indigo-100 bg-indigo-50 text-indigo-700",
+          iconTone: "border-indigo-200/70 bg-indigo-500/10 text-indigo-700",
           points: [
             "Search and inspect patient history visible to nursing staff.",
             "Track status changes during coordination and follow-up.",
@@ -506,7 +469,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/patients",
           cta: "Open patients",
           icon: PatientsIcon,
-          iconTone: "border-sky-100 bg-sky-50 text-sky-700",
+          iconTone: "border-sky-200/70 bg-sky-500/10 text-sky-700",
           points: [
             "Capture the essential registration details at the front desk.",
             "Prepare the patient record before appointment booking.",
@@ -519,7 +482,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/appointments",
           cta: "Open appointments",
           icon: QueueIcon,
-          iconTone: "border-emerald-100 bg-emerald-50 text-emerald-700",
+          iconTone: "border-emerald-200/70 bg-emerald-500/10 text-emerald-700",
           points: [
             "Create the booking request with the visit reason.",
             "Track status from intake through confirmation.",
@@ -532,7 +495,7 @@ function getRoleActions(role: UserRole | null): RoleAction[] {
           href: "/appointments",
           cta: "Review queue",
           icon: QueueIcon,
-          iconTone: "border-amber-100 bg-amber-50 text-amber-700",
+          iconTone: "border-amber-200/70 bg-amber-500/10 text-amber-700",
           points: [
             "Track pending, confirmed, and completed appointments.",
             "Stay aligned with the current front desk workload.",

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { ButtonFx, buttonClassName } from "../_components/medos-ui";
+import { ButtonFx, MedosPage, PrimaryButton, buttonClassName } from "../_components/medos-ui";
 import { useWorkspaceTheme } from "../_components/workspace-theme-context";
 import { useWorkspaceUser } from "../_components/user-session-context";
 import {
@@ -42,92 +42,73 @@ export default function SettingsPage() {
   const accessScope = getScopeLabel(role);
   const loginStamp = useMemo(() => formatLastLogin(), []);
   const loginLocation = data?.profile.address || "Clinical workspace access";
-  const privacyNote = role === "admin"
-    ? "Your access includes workspace controls. Administrative actions are logged and audited in real-time for compliance."
-    : "You are accessing HIPAA-regulated data. All actions are logged and audited in real-time to ensure compliance.";
+  const privacyNote =
+    role === "admin"
+      ? "Your access includes workspace controls. Administrative actions are logged and audited in real time for compliance."
+      : "You are accessing sensitive patient data. All actions are logged and audited in real time to ensure compliance.";
 
   return (
-    <div className="mx-auto max-w-[980px] space-y-5">
-      <section className="rounded-[24px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-        <h1 className="text-[30px] font-semibold tracking-tight text-slate-950">Account settings</h1>
-        <p className="mt-2 text-[15px] leading-7 text-slate-600">
-          Review your access scope and manage your current session for the clinical workflow.
-        </p>
-      </section>
+    <MedosPage
+      sectionNumber="06"
+      sectionTitle="Access and Theme"
+      title="Account settings"
+      description="Review your access scope, switch workspace appearance, and manage the current secure session."
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_320px]">
+        <div className="space-y-5">
+          <section className="med-surface rounded-[28px] overflow-hidden">
+            <div className="border-b border-[color:var(--border-subtle)] px-6 py-5">
+              <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-[color:var(--foreground-soft)]">Access profile</h2>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                Your visible pages and actions depend on the role attached to this account.
+              </p>
+            </div>
 
-      <section className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-        <div className="border-b border-slate-200 px-6 py-5">
-          <h2 className="text-[18px] font-semibold tracking-tight text-slate-950">Access profile</h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Your visible pages and actions depend on the role attached to this account.
-          </p>
+            <div className="grid gap-4 px-6 py-5 md:grid-cols-2">
+              <Field label="User" value={displayName} />
+              <Field label="Role" value={roleLabel} />
+              <Field label="Scope" value={accessScope} />
+              <ThemeField theme={theme} onChange={setTheme} />
+            </div>
+          </section>
+
+          <section className="med-hero rounded-[28px] px-6 py-5">
+            <p className="med-kicker">Patient privacy notice</p>
+            <p className="mt-3 text-2xl font-bold tracking-[-0.04em] text-[color:var(--foreground-soft)]">Security stays visible</p>
+            <p className="mt-3 max-w-[56ch] text-sm leading-7 text-[color:var(--muted)]">{privacyNote}</p>
+            <button type="button" className="mt-4 text-sm font-semibold text-[color:var(--accent-strong)]">
+              View security protocols
+            </button>
+          </section>
         </div>
 
-        <div className="grid gap-4 px-6 py-5 md:grid-cols-2">
-          <Field label="User" value={displayName} />
-          <Field label="Role" value={roleLabel} />
-          <Field label="Scope" value={accessScope} />
-          <ThemeField theme={theme} onChange={setTheme} />
-        </div>
-      </section>
+        <div className="space-y-5">
+          <section className="med-surface rounded-[28px] px-6 py-5">
+            <p className="med-label">Last login</p>
+            <p className="mt-3 text-xl font-bold tracking-[-0.04em] text-[color:var(--foreground-soft)]">{loginStamp}</p>
+            <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{loginLocation}</p>
+          </section>
 
-      <section className="rounded-[24px] border border-slate-200/80 bg-white px-6 py-5 shadow-[0_12px_34px_rgba(15,23,42,0.06)]">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-[18px] font-semibold tracking-tight text-slate-950">Session</h2>
-            <p className="mt-1 text-sm text-slate-600">
+          <section className="med-surface rounded-[28px] px-6 py-5">
+            <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-[color:var(--foreground-soft)]">Session</h2>
+            <p className="mt-1 text-sm leading-7 text-[color:var(--muted)]">
               Sign out of the current workspace session on this device.
             </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loggingOut ? "Signing out..." : "Log out"}
-          </button>
-        </div>
-      </section>
-
-      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/80 bg-[#dfe7ff] px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          <div className="absolute bottom-0 right-4 h-24 w-24 rounded-full border border-white/30 bg-white/10" />
-          <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-sky-700">Patient Privacy Notice</p>
-          <p className="mt-3 text-lg font-semibold tracking-tight text-slate-950">Patient Privacy Notice</p>
-          <p className="mt-2 max-w-[52ch] text-sm leading-6 text-slate-700">{privacyNote}</p>
-          <button
-            type="button"
-            className="mt-4 text-sm font-medium text-sky-700 transition hover:text-sky-800"
-          >
-            View Security Protocols →
-          </button>
-        </div>
-
-        <div className="rounded-[20px] border border-slate-200/80 bg-white px-5 py-5 text-center shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600">
-            <span className="text-base">◔</span>
-          </div>
-          <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">Last Login</p>
-          <p className="mt-2 text-sm font-semibold text-slate-950">{loginStamp}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">{loginLocation}</p>
+            <PrimaryButton onClick={handleLogout} disabled={loggingOut} className="mt-5 h-11 w-full bg-[linear-gradient(135deg,#fb7185,#dc2626)] border-0">
+              {loggingOut ? "Signing out..." : "Log out"}
+            </PrimaryButton>
+          </section>
         </div>
       </div>
-    </div>
+    </MedosPage>
   );
 }
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
-        {label}
-      </span>
-      <input
-        readOnly
-        value={value}
-        className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[15px] text-slate-800 outline-none"
-      />
+      <span className="med-label mb-2 block">{label}</span>
+      <input readOnly value={value} className="med-input" />
     </label>
   );
 }
@@ -141,22 +122,18 @@ function ThemeField({
 }) {
   return (
     <div className="block">
-      <span className="mb-2 block text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500">
-        Background theme
-      </span>
+      <span className="med-label mb-2 block">Background theme</span>
       <div className="grid gap-2 sm:grid-cols-2">
         <ThemeOption
-          label="White Background"
+          label="Airy light"
           swatchClassName="bg-white"
           active={theme === "light"}
-          theme={theme}
           onClick={() => onChange("light")}
         />
         <ThemeOption
-          label="Dark mode"
+          label="Deep night"
           swatchClassName="bg-slate-950"
           active={theme === "dark"}
-          theme={theme}
           onClick={() => onChange("dark")}
         />
       </div>
@@ -168,13 +145,11 @@ function ThemeOption({
   label,
   swatchClassName,
   active,
-  theme,
   onClick,
 }: {
   label: string;
   swatchClassName: string;
   active: boolean;
-  theme: "light" | "dark";
   onClick: () => void;
 }) {
   return (
@@ -182,11 +157,7 @@ function ThemeOption({
       type="button"
       onClick={onClick}
       className={`${buttonClassName({ subtle: true, fullWidth: true })} h-12 justify-start px-3 shadow-none ${
-        active
-          ? theme === "dark"
-            ? "border-sky-800 bg-sky-950/40 text-sky-900 ring-1 ring-sky-900/70"
-            : "border-sky-500 bg-white text-sky-900 ring-2 ring-sky-500/20"
-          : "border-slate-200 bg-white text-slate-700"
+        active ? "border-[color:var(--border-strong)] bg-[color:var(--surface-strong)]" : ""
       }`}
       aria-pressed={active}
     >
